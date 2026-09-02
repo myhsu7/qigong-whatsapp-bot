@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#16352f">
+  <title>氣功打卡</title>
+  <style>
+    :root { --ink:#17342d; --paper:#f2eddf; --card:#fffdf6; --jade:#287060; --jade-dark:#174d43; --gold:#be8a3c; --muted:#6d766f; --line:#d9d2c2; --danger:#a33a32; }
+    * { box-sizing:border-box; }
+    body { margin:0; color:var(--ink); background:radial-gradient(circle at 90% 0,#d6e4d6 0,transparent 32rem),var(--paper); font-family:"Noto Serif TC","Songti TC",serif; }
+    header { padding:28px 20px 18px; background:linear-gradient(145deg,#102d28,#205a4e); color:#fffdf2; border-bottom:4px solid var(--gold); }
+    header .eyebrow { color:#d8c18c; letter-spacing:.22em; font-size:12px; }
+    header h1 { margin:7px 0 4px; font-size:28px; font-weight:600; }
+    header p { margin:0; opacity:.76; font-size:14px; }
+    nav { display:grid; grid-template-columns:repeat(4,1fr); position:sticky; top:0; z-index:10; background:rgba(242,237,223,.96); backdrop-filter:blur(10px); border-bottom:1px solid var(--line); }
+    nav button { border:0; border-bottom:3px solid transparent; padding:13px 4px 10px; background:none; color:var(--muted); font:600 13px system-ui,sans-serif; }
+    nav button.active { color:var(--jade-dark); border-color:var(--gold); }
+    main { max-width:720px; margin:auto; padding:18px 16px 72px; }
+    section { display:none; }
+    section.active { display:block; }
+    .card { padding:18px; margin-bottom:14px; background:var(--card); border:1px solid rgba(190,138,60,.22); border-radius:6px 18px 6px 18px; box-shadow:0 8px 24px rgba(23,52,45,.07); }
+    h2 { margin:0 0 12px; font-size:18px; }
+    .status { padding:11px 13px; border-left:4px solid var(--gold); background:#f6efd9; font:14px/1.5 system-ui,sans-serif; }
+    .error { color:var(--danger); border-color:var(--danger); }
+    .success { color:#176044; border-color:#27825e; }
+    .method { padding:9px 0; border-bottom:1px solid #ebe5d8; }
+    .method:last-child { border:0; }
+    .method-line { display:flex; align-items:center; gap:8px; }
+    .method label { display:flex; align-items:center; gap:9px; flex:1; font-size:16px; }
+    .children { margin:7px 0 0 30px; display:grid; gap:9px; color:#3d554f; }
+    .toggle { width:28px; height:28px; border:1px solid var(--line); border-radius:50%; background:#fff; color:var(--jade-dark); }
+    input[type=checkbox] { width:18px; height:18px; accent-color:var(--jade); }
+    textarea,select { width:100%; border:1px solid var(--line); border-radius:8px; background:#fff; padding:12px; color:var(--ink); font:15px/1.5 system-ui,sans-serif; }
+    textarea { min-height:92px; resize:vertical; }
+    .primary { width:100%; padding:14px; border:0; border-radius:4px 14px 4px 14px; background:var(--jade-dark); color:#fff; font:700 16px system-ui,sans-serif; }
+    .primary:disabled { opacity:.55; }
+    .stats { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; text-align:center; }
+    .stat { padding:16px 6px; background:#edf3ed; border-radius:4px 12px; }
+    .stat strong { display:block; font:700 24px system-ui,sans-serif; color:var(--jade-dark); }
+    .stat span { font:12px system-ui,sans-serif; color:var(--muted); }
+    .history { padding:14px 0; border-bottom:1px solid var(--line); }
+    .history:last-child { border:0; }
+    .history time { font:700 13px system-ui,sans-serif; color:var(--gold); }
+    .history p { margin:5px 0 0; line-height:1.55; }
+    .switch-row { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+    .switch-row input { width:22px; height:22px; accent-color:var(--jade); }
+    .field { margin:14px 0; }
+    .field label { display:block; margin-bottom:6px; color:var(--muted); font:13px system-ui,sans-serif; }
+    @media (max-width:420px) { header { padding-top:22px; } main { padding-inline:12px; } .card { padding:15px; } .stats { gap:5px; } }
+  </style>
+</head>
+<body>
+  <header><div class="eyebrow">每日練功 · 積微成著</div><h1>氣功打卡</h1><p id="dateLabel">載入中</p></header>
+  <nav>
+    <button class="active" data-tab="checkin">打卡</button><button data-tab="stats">統計</button><button data-tab="history">紀錄</button><button data-tab="reminders">提醒</button>
+  </nav>
+  <main>
+    <section id="checkin" class="active">
+      <div class="card"><div id="todayStatus" class="status">正在載入今日資料...</div></div>
+      <div class="card"><h2>今日功法</h2><div id="methods"></div></div>
+      <div class="card"><h2>練功心得</h2><textarea id="reflection" maxlength="1000" placeholder="記下今天練功時的心境與體會"></textarea></div>
+      <div class="card"><h2>身體感受</h2><textarea id="bodyFeeling" maxlength="1000" placeholder="記下呼吸、氣感或身體變化"></textarea></div>
+      <button id="submit" class="primary">完成今日打卡</button><div id="submitStatus" class="status" hidden></div>
+    </section>
+    <section id="stats"><div class="card"><h2>修練累積</h2><div class="stats"><div class="stat"><strong id="currentStreak">0</strong><span>目前連續</span></div><div class="stat"><strong id="longestStreak">0</strong><span>最長連續</span></div><div class="stat"><strong id="totalCheckins">0</strong><span>累計天數</span></div></div><p id="lastCheckin" class="status">尚無紀錄</p></div></section>
+    <section id="history"><div class="card"><h2>最近 30 次打卡</h2><div id="historyList">正在載入...</div></div></section>
+    <section id="reminders"><div class="card"><h2>每日提醒</h2><div class="switch-row"><span>允許每日打卡提醒</span><input type="checkbox" id="reminderEnabled"></div><div class="field"><label for="reminderHour">提醒時間</label><select id="reminderHour"></select></div><div class="field"><label for="reminderTimezone">時區</label><select id="reminderTimezone"><option value="Asia/Taipei">台北（Asia/Taipei）</option><option value="Asia/Hong_Kong">香港（Asia/Hong_Kong）</option><option value="Asia/Singapore">新加坡（Asia/Singapore）</option><option value="America/Los_Angeles">美西（America/Los_Angeles）</option></select></div><button id="saveReminder" class="primary">儲存提醒設定</button><div id="reminderStatus" class="status" hidden></div></div></section>
+  </main>
+  <script>
+    const state = { methods: [], selected: new Set(), expanded: new Set() };
+    const el = (id) => document.getElementById(id);
+    const api = async (url, options = {}) => {
+      const headers = new Headers(options.headers || {});
+      headers.set('x-requested-with', 'qigong-webapp');
+      if (options.body) headers.set('content-type', 'application/json');
+      const response = await fetch(`/whatsapp/api/webapp${url}`, { ...options, headers });
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(body.error || '請求失敗');
+      return body;
+    };
+    const showStatus = (target, message, kind = '') => { target.hidden = false; target.textContent = message; target.className = `status ${kind}`; };
+    document.querySelectorAll('nav button').forEach((button) => button.addEventListener('click', () => {
+      document.querySelectorAll('nav button, main section').forEach((item) => item.classList.remove('active'));
+      button.classList.add('active'); el(button.dataset.tab).classList.add('active');
+    }));
+    const renderMethods = () => {
+      const container = el('methods'); container.replaceChildren();
+      state.methods.forEach((method) => {
+        const block = document.createElement('div'); block.className = 'method';
+        const line = document.createElement('div'); line.className = 'method-line';
+        if (method.children.length) {
+          const toggle = document.createElement('button'); toggle.className = 'toggle'; toggle.type = 'button'; toggle.textContent = state.expanded.has(method.id) ? '−' : '+';
+          toggle.addEventListener('click', () => { state.expanded.has(method.id) ? state.expanded.delete(method.id) : state.expanded.add(method.id); renderMethods(); }); line.append(toggle);
+        } else line.append(document.createElement('span'));
+        const label = document.createElement('label'); const checkbox = document.createElement('input'); checkbox.type = 'checkbox';
+        const childIds = method.children.map((child) => child.id); checkbox.checked = method.children.length ? childIds.every((id) => state.selected.has(id)) : state.selected.has(method.id);
+        checkbox.indeterminate = method.children.length && childIds.some((id) => state.selected.has(id)) && !checkbox.checked;
+        checkbox.addEventListener('change', () => { (method.children.length ? childIds : [method.id]).forEach((id) => checkbox.checked ? state.selected.add(id) : state.selected.delete(id)); renderMethods(); });
+        label.append(checkbox, document.createTextNode(method.nameZh)); line.append(label); block.append(line);
+        if (method.children.length && state.expanded.has(method.id)) {
+          const children = document.createElement('div'); children.className = 'children';
+          method.children.forEach((child) => { const childLabel = document.createElement('label'); const childBox = document.createElement('input'); childBox.type = 'checkbox'; childBox.checked = state.selected.has(child.id); childBox.addEventListener('change', () => { childBox.checked ? state.selected.add(child.id) : state.selected.delete(child.id); renderMethods(); }); childLabel.append(childBox, document.createTextNode(child.nameZh)); children.append(childLabel); });
+          block.append(children);
+        }
+        container.append(block);
+      });
+    };
+    const renderStats = (stats) => { el('currentStreak').textContent = stats.currentStreak; el('longestStreak').textContent = stats.longestStreak; el('totalCheckins').textContent = stats.totalCheckins; el('lastCheckin').textContent = stats.lastCheckinDate ? `最近打卡：${stats.lastCheckinDate}` : '尚無打卡紀錄'; };
+    const loadHistory = async () => { const { entries } = await api('/history'); const list = el('historyList'); list.replaceChildren(); if (!entries.length) { list.textContent = '尚無打卡紀錄'; return; } entries.forEach((entry) => { const row = document.createElement('div'); row.className = 'history'; const time = document.createElement('time'); time.textContent = entry.date; const methods = document.createElement('p'); methods.textContent = entry.methods; row.append(time, methods); if (entry.reflectionNote) { const note = document.createElement('p'); note.textContent = `心得：${entry.reflectionNote}`; row.append(note); } list.append(row); }); };
+    const load = async () => {
+      try {
+        const [methods, today, stats, reminders] = await Promise.all([api('/practice-methods'), api('/checkin/today'), api('/stats'), api('/reminders')]);
+        state.methods = methods.methods; state.selected = new Set(today.selectedMethodIds); state.expanded = new Set(state.methods.filter((method) => method.children.some((child) => state.selected.has(child.id))).map((method) => method.id)); renderMethods();
+        el('reflection').value = today.reflectionNote; el('bodyFeeling').value = today.bodyFeelingNote; el('dateLabel').textContent = today.date;
+        showStatus(el('todayStatus'), today.alreadyCheckedIn ? '今日已打卡，可修改內容後再次送出。' : '今日尚未打卡，選擇功法後完成紀錄。'); renderStats(stats);
+        el('reminderEnabled').checked = reminders.reminderEnabled; el('reminderHour').value = reminders.reminderHour; el('reminderTimezone').value = reminders.reminderTimezone; await loadHistory();
+      } catch (error) { showStatus(el('todayStatus'), error.message, 'error'); }
+    };
+    for (let hour = 0; hour < 24; hour += 1) { const option = document.createElement('option'); option.value = hour; option.textContent = `${String(hour).padStart(2, '0')}:00`; el('reminderHour').append(option); }
+    el('submit').addEventListener('click', async () => { if (!state.selected.size) return showStatus(el('submitStatus'), '請至少選擇一個功法。', 'error'); el('submit').disabled = true; try { const result = await api('/checkin', { method:'POST', body:JSON.stringify({ methodIds:[...state.selected], reflectionNote:el('reflection').value, bodyFeelingNote:el('bodyFeeling').value }) }); showStatus(el('submitStatus'), `打卡完成：${result.selectedMethods.join('、')}`, 'success'); showStatus(el('todayStatus'), '今日已打卡，可修改內容後再次送出。'); renderStats(result.stats); await loadHistory(); } catch (error) { showStatus(el('submitStatus'), error.message, 'error'); } finally { el('submit').disabled = false; } });
+    el('saveReminder').addEventListener('click', async () => { el('saveReminder').disabled = true; try { await api('/reminders', { method:'PATCH', body:JSON.stringify({ reminderEnabled:el('reminderEnabled').checked, reminderHour:Number(el('reminderHour').value), reminderTimezone:el('reminderTimezone').value }) }); showStatus(el('reminderStatus'), '提醒設定已儲存。', 'success'); } catch (error) { showStatus(el('reminderStatus'), error.message, 'error'); } finally { el('saveReminder').disabled = false; } });
+    load();
+  </script>
+</body>
+</html>

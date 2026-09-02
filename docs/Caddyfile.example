@@ -1,0 +1,11 @@
+:8080 {
+    # Keep the existing LINE and Telegram handlers above this block.
+    handle /whatsapp/* {
+        reverse_proxy 127.0.0.1:3002
+    }
+
+    # Keep the existing fallback handler last.
+    handle {
+        respond "shared funnel reverse proxy is running" 200
+    }
+}
