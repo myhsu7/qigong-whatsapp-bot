@@ -4,6 +4,7 @@ export interface PracticeMethodRow {
     id: number;
     code: string;
     nameZh: string;
+    nameZhCn: string;
     nameEn: string | null;
     estimatedMinutes: number | null;
     sortOrder: number;
@@ -17,13 +18,14 @@ export interface PracticeMethod extends Omit<PracticeMethodRow, 'sortOrder'> {
 
 export const getPracticeMethodRows = async (): Promise<PracticeMethodRow[]> => {
     const { rows } = await db.query(
-        `SELECT id, code, name_zh, name_en, estimated_minutes, sort_order, parent_id, method_type
+        `SELECT id, code, name_zh, name_zh_cn, name_en, estimated_minutes, sort_order, parent_id, method_type
          FROM practice_methods WHERE is_active = TRUE ORDER BY sort_order, id`
     );
     return rows.map((row) => ({
         id: row.id,
         code: row.code,
         nameZh: row.name_zh,
+        nameZhCn: row.name_zh_cn,
         nameEn: row.name_en,
         estimatedMinutes: row.estimated_minutes,
         sortOrder: row.sort_order,

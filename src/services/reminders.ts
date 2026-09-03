@@ -1,5 +1,6 @@
 import moment from 'moment-timezone';
 import { db } from '../db';
+import { UserInputError } from '../errors';
 
 export interface ReminderSettings {
     reminderEnabled: boolean;
@@ -24,9 +25,9 @@ export const updateReminderSettings = async (waId: string, updates: Partial<Remi
     const current = await getReminderSettings(waId);
     const next = { ...current, ...updates };
     if (!Number.isInteger(next.reminderHour) || next.reminderHour < 0 || next.reminderHour > 23) {
-        throw new Error('提醒時間必須介於 0 到 23 點');
+        throw new UserInputError('reminder_hour');
     }
-    if (!moment.tz.zone(next.reminderTimezone)) throw new Error('無效的時區');
+    if (!moment.tz.zone(next.reminderTimezone)) throw new UserInputError('timezone');
     await db.query(
         `UPDATE whatsapp_users SET reminder_enabled = $2, reminder_hour = $3, reminder_timezone = $4,
          reminder_opted_in_at = CASE WHEN $2 THEN COALESCE(reminder_opted_in_at, CURRENT_TIMESTAMP) ELSE reminder_opted_in_at END,

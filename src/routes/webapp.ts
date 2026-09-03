@@ -17,7 +17,7 @@ router.get('/auth', async (req, res) => {
         res.redirect('/whatsapp/webapp/checkin');
     } catch (error) {
         console.error('[webapp-auth] magic link rejected', error instanceof Error ? error.message : error);
-        res.status(401).type('html').send('<!doctype html><html lang="zh-Hant"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>連結失效</title><body><p>連結無效、已使用或已過期。</p><p>請回到 WhatsApp 重新輸入「打卡」。</p></body></html>');
+        res.status(401).type('html').send('<!doctype html><html lang="zh-Hant"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Link expired</title><body><p>連結無效、已使用或已過期。/ 链接无效、已使用或已过期。/ This link is invalid, used, or expired.</p><p>請回到 WhatsApp 重新輸入「打卡」。/ Return to WhatsApp and send "checkin" again.</p></body></html>');
     }
 });
 

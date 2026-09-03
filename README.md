@@ -10,6 +10,9 @@ WhatsApp Business Platform one-to-one MVP for daily Qigong check-ins.
 - Single-use magic-link authentication with server-side sessions.
 - Mobile Web App for check-ins, history, statistics, and reminder settings.
 - Timezone-aware, opt-in template reminders with daily deduplication.
+- Traditional Chinese, Simplified Chinese, and English bot and Web App interfaces.
+
+The WhatsApp Cloud API does not expose the user's WhatsApp interface language in inbound webhooks. On first contact, the bot detects unambiguous English or Chinese text; otherwise it asks the user to choose a language. The saved preference controls future bot replies, method names, the Web App, and reminder templates. Send `語言`, `语言`, or `language` to change it.
 
 Groups are intentionally excluded. Meta Groups API requires an Official Business Account and currently limits groups to eight participants.
 
@@ -39,8 +42,8 @@ Use `META_VERIFY_TOKEN` while registering the webhook and subscribe the WABA to 
 2. Add or register a business phone number.
 3. Create a system user token with the required WhatsApp permissions.
 4. Set `META_APP_SECRET`, `META_ACCESS_TOKEN`, and `META_PHONE_NUMBER_ID`.
-5. Submit `WHATSAPP_REMINDER_TEMPLATE` for approval before enabling reminders.
-6. Ensure the approved reminder template language matches `WHATSAPP_REMINDER_TEMPLATE_LANGUAGE`.
+5. Submit the three configured reminder templates for approval before enabling reminders.
+6. Ensure each approved template name and language matches the corresponding `WHATSAPP_REMINDER_TEMPLATE_*` settings.
 
 The default reminder template has no variables or buttons. Users can reply with `打卡` to receive a fresh one-time Web App link within the customer-service window.
 
@@ -52,6 +55,7 @@ The default reminder template has no variables or buttons. Users can reply with 
 - `提醒開啟`
 - `提醒關閉`
 - `選單` or `menu`
+- `語言`, `语言`, or `language`
 
 ## Production
 

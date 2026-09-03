@@ -9,10 +9,13 @@
     :root { --ink:#17342d; --paper:#f2eddf; --card:#fffdf6; --jade:#287060; --jade-dark:#174d43; --gold:#be8a3c; --muted:#6d766f; --line:#d9d2c2; --danger:#a33a32; }
     * { box-sizing:border-box; }
     body { margin:0; color:var(--ink); background:radial-gradient(circle at 90% 0,#d6e4d6 0,transparent 32rem),var(--paper); font-family:"Noto Serif TC","Songti TC",serif; }
-    header { padding:28px 20px 18px; background:linear-gradient(145deg,#102d28,#205a4e); color:#fffdf2; border-bottom:4px solid var(--gold); }
-    header .eyebrow { color:#d8c18c; letter-spacing:.22em; font-size:12px; }
+    header { padding:24px 20px 18px; background:linear-gradient(145deg,#102d28,#205a4e); color:#fffdf2; border-bottom:4px solid var(--gold); }
+    .header-top { max-width:680px; margin:auto; display:flex; align-items:flex-start; justify-content:space-between; gap:16px; }
+    header .eyebrow { color:#d8c18c; letter-spacing:.18em; font-size:12px; }
     header h1 { margin:7px 0 4px; font-size:28px; font-weight:600; }
     header p { margin:0; opacity:.76; font-size:14px; }
+    .language { width:auto; min-width:126px; padding:8px; color:#fff; background:#ffffff18; border-color:#ffffff55; }
+    .language option { color:#17342d; background:#fff; }
     nav { display:grid; grid-template-columns:repeat(4,1fr); position:sticky; top:0; z-index:10; background:rgba(242,237,223,.96); backdrop-filter:blur(10px); border-bottom:1px solid var(--line); }
     nav button { border:0; border-bottom:3px solid transparent; padding:13px 4px 10px; background:none; color:var(--muted); font:600 13px system-ui,sans-serif; }
     nav button.active { color:var(--jade-dark); border-color:var(--gold); }
@@ -47,79 +50,47 @@
     .switch-row input { width:22px; height:22px; accent-color:var(--jade); }
     .field { margin:14px 0; }
     .field label { display:block; margin-bottom:6px; color:var(--muted); font:13px system-ui,sans-serif; }
-    @media (max-width:420px) { header { padding-top:22px; } main { padding-inline:12px; } .card { padding:15px; } .stats { gap:5px; } }
+    @media (max-width:420px) { header { padding-inline:14px; } main { padding-inline:12px; } .card { padding:15px; } .stats { gap:5px; } .language { min-width:112px; } }
   </style>
 </head>
 <body>
-  <header><div class="eyebrow">每日練功 · 積微成著</div><h1>氣功打卡</h1><p id="dateLabel">載入中</p></header>
-  <nav>
-    <button class="active" data-tab="checkin">打卡</button><button data-tab="stats">統計</button><button data-tab="history">紀錄</button><button data-tab="reminders">提醒</button>
-  </nav>
+  <header><div class="header-top"><div><div id="eyebrow" class="eyebrow">每日練功 · 積微成著</div><h1 id="pageTitle">氣功打卡</h1><p id="dateLabel">載入中</p></div><select id="language" class="language" aria-label="Language"><option value="zh_TW">繁體中文</option><option value="zh_CN">简体中文</option><option value="en">English</option></select></div></header>
+  <nav><button id="tabCheckin" class="active" data-tab="checkin">打卡</button><button id="tabStats" data-tab="stats">統計</button><button id="tabHistory" data-tab="history">紀錄</button><button id="tabReminders" data-tab="reminders">提醒</button></nav>
   <main>
     <section id="checkin" class="active">
       <div class="card"><div id="todayStatus" class="status">正在載入今日資料...</div></div>
-      <div class="card"><h2>今日功法</h2><div id="methods"></div></div>
-      <div class="card"><h2>練功心得</h2><textarea id="reflection" maxlength="1000" placeholder="記下今天練功時的心境與體會"></textarea></div>
-      <div class="card"><h2>身體感受</h2><textarea id="bodyFeeling" maxlength="1000" placeholder="記下呼吸、氣感或身體變化"></textarea></div>
+      <div class="card"><h2 id="methodsTitle">今日功法</h2><div id="methods"></div></div>
+      <div class="card"><h2 id="reflectionTitle">練功心得</h2><textarea id="reflection" maxlength="1000" placeholder="記下今天練功時的心境與體會"></textarea></div>
+      <div class="card"><h2 id="bodyTitle">身體感受</h2><textarea id="bodyFeeling" maxlength="1000" placeholder="記下呼吸、氣感或身體變化"></textarea></div>
       <button id="submit" class="primary">完成今日打卡</button><div id="submitStatus" class="status" hidden></div>
     </section>
-    <section id="stats"><div class="card"><h2>修練累積</h2><div class="stats"><div class="stat"><strong id="currentStreak">0</strong><span>目前連續</span></div><div class="stat"><strong id="longestStreak">0</strong><span>最長連續</span></div><div class="stat"><strong id="totalCheckins">0</strong><span>累計天數</span></div></div><p id="lastCheckin" class="status">尚無紀錄</p></div></section>
-    <section id="history"><div class="card"><h2>最近 30 次打卡</h2><div id="historyList">正在載入...</div></div></section>
-    <section id="reminders"><div class="card"><h2>每日提醒</h2><div class="switch-row"><span>允許每日打卡提醒</span><input type="checkbox" id="reminderEnabled"></div><div class="field"><label for="reminderHour">提醒時間</label><select id="reminderHour"></select></div><div class="field"><label for="reminderTimezone">時區</label><select id="reminderTimezone"><option value="Asia/Taipei">台北（Asia/Taipei）</option><option value="Asia/Hong_Kong">香港（Asia/Hong_Kong）</option><option value="Asia/Singapore">新加坡（Asia/Singapore）</option><option value="America/Los_Angeles">美西（America/Los_Angeles）</option></select></div><button id="saveReminder" class="primary">儲存提醒設定</button><div id="reminderStatus" class="status" hidden></div></div></section>
+    <section id="stats"><div class="card"><h2 id="statsTitle">修練累積</h2><div class="stats"><div class="stat"><strong id="currentStreak">0</strong><span id="currentLabel">目前連續</span></div><div class="stat"><strong id="longestStreak">0</strong><span id="longestLabel">最長連續</span></div><div class="stat"><strong id="totalCheckins">0</strong><span id="totalLabel">累計天數</span></div></div><p id="lastCheckin" class="status">尚無紀錄</p></div></section>
+    <section id="history"><div class="card"><h2 id="historyTitle">最近 30 次打卡</h2><div id="historyList">正在載入...</div></div></section>
+    <section id="reminders"><div class="card"><h2 id="remindersTitle">每日提醒</h2><div class="switch-row"><span id="reminderAllow">允許每日打卡提醒</span><input type="checkbox" id="reminderEnabled"></div><div class="field"><label id="reminderHourLabel" for="reminderHour">提醒時間</label><select id="reminderHour"></select></div><div class="field"><label id="timezoneLabel" for="reminderTimezone">時區</label><select id="reminderTimezone"><option value="Asia/Taipei"></option><option value="Asia/Hong_Kong"></option><option value="Asia/Singapore"></option><option value="America/Los_Angeles"></option></select></div><button id="saveReminder" class="primary">儲存提醒設定</button><div id="reminderStatus" class="status" hidden></div></div></section>
   </main>
   <script>
-    const state = { methods: [], selected: new Set(), expanded: new Set() };
+    const translations = {
+      zh_TW: { htmlLang:'zh-Hant', pageTitle:'氣功打卡', eyebrow:'每日練功 · 積微成著', loading:'載入中', requestFailed:'請求失敗', tabCheckin:'打卡', tabStats:'統計', tabHistory:'紀錄', tabReminders:'提醒', methodsTitle:'今日功法', reflectionTitle:'練功心得', reflectionPlaceholder:'記下今天練功時的心境與體會', bodyTitle:'身體感受', bodyPlaceholder:'記下呼吸、氣感或身體變化', submit:'完成今日打卡', statsTitle:'修練累積', currentLabel:'目前連續', longestLabel:'最長連續', totalLabel:'累計天數', noRecord:'尚無打卡紀錄', recent:'最近打卡', historyTitle:'最近 30 次打卡', remindersTitle:'每日提醒', reminderAllow:'允許每日打卡提醒', reminderHourLabel:'提醒時間', timezoneLabel:'時區', saveReminder:'儲存提醒設定', todayDone:'今日已打卡，可修改內容後再次送出。', todayPending:'今日尚未打卡，選擇功法後完成紀錄。', selectMethod:'請至少選擇一個功法。', checkinDone:'打卡完成', reflectionPrefix:'心得', reminderSaved:'提醒設定已儲存。', timezones:['台北','香港','新加坡','美西'] },
+      zh_CN: { htmlLang:'zh-Hans', pageTitle:'气功打卡', eyebrow:'每日练功 · 积微成著', loading:'加载中', requestFailed:'请求失败', tabCheckin:'打卡', tabStats:'统计', tabHistory:'记录', tabReminders:'提醒', methodsTitle:'今日功法', reflectionTitle:'练功心得', reflectionPlaceholder:'记录今天练功时的心境与体会', bodyTitle:'身体感受', bodyPlaceholder:'记录呼吸、气感或身体变化', submit:'完成今日打卡', statsTitle:'练功累计', currentLabel:'目前连续', longestLabel:'最长连续', totalLabel:'累计天数', noRecord:'尚无打卡记录', recent:'最近打卡', historyTitle:'最近 30 次打卡', remindersTitle:'每日提醒', reminderAllow:'允许每日打卡提醒', reminderHourLabel:'提醒时间', timezoneLabel:'时区', saveReminder:'保存提醒设置', todayDone:'今日已打卡，可修改内容后再次提交。', todayPending:'今日尚未打卡，选择功法后完成记录。', selectMethod:'请至少选择一个功法。', checkinDone:'打卡完成', reflectionPrefix:'心得', reminderSaved:'提醒设置已保存。', timezones:['台北','香港','新加坡','美国西部'] },
+      en: { htmlLang:'en', pageTitle:'Qigong Check-in', eyebrow:'DAILY PRACTICE · STEADY PROGRESS', loading:'Loading', requestFailed:'Request failed', tabCheckin:'Check in', tabStats:'Stats', tabHistory:'History', tabReminders:'Reminders', methodsTitle:'Today\'s methods', reflectionTitle:'Practice reflection', reflectionPlaceholder:'Write down what you noticed during practice', bodyTitle:'Body sensations', bodyPlaceholder:'Note changes in breathing, energy, or your body', submit:'Complete check-in', statsTitle:'Practice progress', currentLabel:'Current streak', longestLabel:'Longest streak', totalLabel:'Total days', noRecord:'No check-ins yet', recent:'Most recent', historyTitle:'Last 30 check-ins', remindersTitle:'Daily reminder', reminderAllow:'Enable daily check-in reminder', reminderHourLabel:'Reminder time', timezoneLabel:'Time zone', saveReminder:'Save reminder settings', todayDone:'You have checked in today. You can update and submit it again.', todayPending:'No check-in yet today. Select your methods to begin.', selectMethod:'Select at least one practice method.', checkinDone:'Check-in complete', reflectionPrefix:'Reflection', reminderSaved:'Reminder settings saved.', timezones:['Taipei','Hong Kong','Singapore','US Pacific'] }
+    };
+    const state = { locale:'zh_TW', methods:[], selected:new Set(), expanded:new Set(), today:null, stats:null };
     const el = (id) => document.getElementById(id);
-    const api = async (url, options = {}) => {
-      const headers = new Headers(options.headers || {});
-      headers.set('x-requested-with', 'qigong-webapp');
-      if (options.body) headers.set('content-type', 'application/json');
-      const response = await fetch(`/whatsapp/api/webapp${url}`, { ...options, headers });
-      const body = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(body.error || '請求失敗');
-      return body;
-    };
-    const showStatus = (target, message, kind = '') => { target.hidden = false; target.textContent = message; target.className = `status ${kind}`; };
-    document.querySelectorAll('nav button').forEach((button) => button.addEventListener('click', () => {
-      document.querySelectorAll('nav button, main section').forEach((item) => item.classList.remove('active'));
-      button.classList.add('active'); el(button.dataset.tab).classList.add('active');
-    }));
-    const renderMethods = () => {
-      const container = el('methods'); container.replaceChildren();
-      state.methods.forEach((method) => {
-        const block = document.createElement('div'); block.className = 'method';
-        const line = document.createElement('div'); line.className = 'method-line';
-        if (method.children.length) {
-          const toggle = document.createElement('button'); toggle.className = 'toggle'; toggle.type = 'button'; toggle.textContent = state.expanded.has(method.id) ? '−' : '+';
-          toggle.addEventListener('click', () => { state.expanded.has(method.id) ? state.expanded.delete(method.id) : state.expanded.add(method.id); renderMethods(); }); line.append(toggle);
-        } else line.append(document.createElement('span'));
-        const label = document.createElement('label'); const checkbox = document.createElement('input'); checkbox.type = 'checkbox';
-        const childIds = method.children.map((child) => child.id); checkbox.checked = method.children.length ? childIds.every((id) => state.selected.has(id)) : state.selected.has(method.id);
-        checkbox.indeterminate = method.children.length && childIds.some((id) => state.selected.has(id)) && !checkbox.checked;
-        checkbox.addEventListener('change', () => { (method.children.length ? childIds : [method.id]).forEach((id) => checkbox.checked ? state.selected.add(id) : state.selected.delete(id)); renderMethods(); });
-        label.append(checkbox, document.createTextNode(method.nameZh)); line.append(label); block.append(line);
-        if (method.children.length && state.expanded.has(method.id)) {
-          const children = document.createElement('div'); children.className = 'children';
-          method.children.forEach((child) => { const childLabel = document.createElement('label'); const childBox = document.createElement('input'); childBox.type = 'checkbox'; childBox.checked = state.selected.has(child.id); childBox.addEventListener('change', () => { childBox.checked ? state.selected.add(child.id) : state.selected.delete(child.id); renderMethods(); }); childLabel.append(childBox, document.createTextNode(child.nameZh)); children.append(childLabel); });
-          block.append(children);
-        }
-        container.append(block);
-      });
-    };
-    const renderStats = (stats) => { el('currentStreak').textContent = stats.currentStreak; el('longestStreak').textContent = stats.longestStreak; el('totalCheckins').textContent = stats.totalCheckins; el('lastCheckin').textContent = stats.lastCheckinDate ? `最近打卡：${stats.lastCheckinDate}` : '尚無打卡紀錄'; };
-    const loadHistory = async () => { const { entries } = await api('/history'); const list = el('historyList'); list.replaceChildren(); if (!entries.length) { list.textContent = '尚無打卡紀錄'; return; } entries.forEach((entry) => { const row = document.createElement('div'); row.className = 'history'; const time = document.createElement('time'); time.textContent = entry.date; const methods = document.createElement('p'); methods.textContent = entry.methods; row.append(time, methods); if (entry.reflectionNote) { const note = document.createElement('p'); note.textContent = `心得：${entry.reflectionNote}`; row.append(note); } list.append(row); }); };
-    const load = async () => {
-      try {
-        const [methods, today, stats, reminders] = await Promise.all([api('/practice-methods'), api('/checkin/today'), api('/stats'), api('/reminders')]);
-        state.methods = methods.methods; state.selected = new Set(today.selectedMethodIds); state.expanded = new Set(state.methods.filter((method) => method.children.some((child) => state.selected.has(child.id))).map((method) => method.id)); renderMethods();
-        el('reflection').value = today.reflectionNote; el('bodyFeeling').value = today.bodyFeelingNote; el('dateLabel').textContent = today.date;
-        showStatus(el('todayStatus'), today.alreadyCheckedIn ? '今日已打卡，可修改內容後再次送出。' : '今日尚未打卡，選擇功法後完成紀錄。'); renderStats(stats);
-        el('reminderEnabled').checked = reminders.reminderEnabled; el('reminderHour').value = reminders.reminderHour; el('reminderTimezone').value = reminders.reminderTimezone; await loadHistory();
-      } catch (error) { showStatus(el('todayStatus'), error.message, 'error'); }
-    };
-    for (let hour = 0; hour < 24; hour += 1) { const option = document.createElement('option'); option.value = hour; option.textContent = `${String(hour).padStart(2, '0')}:00`; el('reminderHour').append(option); }
-    el('submit').addEventListener('click', async () => { if (!state.selected.size) return showStatus(el('submitStatus'), '請至少選擇一個功法。', 'error'); el('submit').disabled = true; try { const result = await api('/checkin', { method:'POST', body:JSON.stringify({ methodIds:[...state.selected], reflectionNote:el('reflection').value, bodyFeelingNote:el('bodyFeeling').value }) }); showStatus(el('submitStatus'), `打卡完成：${result.selectedMethods.join('、')}`, 'success'); showStatus(el('todayStatus'), '今日已打卡，可修改內容後再次送出。'); renderStats(result.stats); await loadHistory(); } catch (error) { showStatus(el('submitStatus'), error.message, 'error'); } finally { el('submit').disabled = false; } });
-    el('saveReminder').addEventListener('click', async () => { el('saveReminder').disabled = true; try { await api('/reminders', { method:'PATCH', body:JSON.stringify({ reminderEnabled:el('reminderEnabled').checked, reminderHour:Number(el('reminderHour').value), reminderTimezone:el('reminderTimezone').value }) }); showStatus(el('reminderStatus'), '提醒設定已儲存。', 'success'); } catch (error) { showStatus(el('reminderStatus'), error.message, 'error'); } finally { el('saveReminder').disabled = false; } });
+    const text = () => translations[state.locale];
+    const methodName = (method) => state.locale === 'en' ? (method.nameEn || method.nameZh) : state.locale === 'zh_CN' ? (method.nameZhCn || method.nameZh) : method.nameZh;
+    const api = async (url, options = {}) => { const headers = new Headers(options.headers || {}); headers.set('x-requested-with','qigong-webapp'); if (options.body) headers.set('content-type','application/json'); const response = await fetch(`/whatsapp/api/webapp${url}`,{...options,headers}); const body = await response.json().catch(()=>({})); if (!response.ok) throw new Error(body.error || text().requestFailed); return body; };
+    const showStatus = (target,message,kind='') => { target.hidden=false; target.textContent=message; target.className=`status ${kind}`; };
+    const setText = (id,value) => { el(id).textContent=value; };
+    const applyLocale = () => { const tx=text(); document.documentElement.lang=tx.htmlLang; document.title=tx.pageTitle; ['pageTitle','eyebrow','tabCheckin','tabStats','tabHistory','tabReminders','methodsTitle','reflectionTitle','bodyTitle','statsTitle','currentLabel','longestLabel','totalLabel','historyTitle','remindersTitle','reminderAllow','reminderHourLabel','timezoneLabel','saveReminder'].forEach((id)=>setText(id,tx[id])); el('reflection').placeholder=tx.reflectionPlaceholder; el('bodyFeeling').placeholder=tx.bodyPlaceholder; setText('submit',tx.submit); const zones=['Asia/Taipei','Asia/Hong_Kong','Asia/Singapore','America/Los_Angeles']; [...el('reminderTimezone').options].forEach((option,index)=>{ option.textContent=`${tx.timezones[index]} (${zones[index]})`; }); if (state.today) showStatus(el('todayStatus'),state.today.alreadyCheckedIn?tx.todayDone:tx.todayPending); if (state.stats) renderStats(state.stats); renderMethods(); };
+    document.querySelectorAll('nav button').forEach((button)=>button.addEventListener('click',()=>{ document.querySelectorAll('nav button,main section').forEach((item)=>item.classList.remove('active')); button.classList.add('active'); el(button.dataset.tab).classList.add('active'); }));
+    const renderMethods = () => { const container=el('methods'); container.replaceChildren(); state.methods.forEach((method)=>{ const block=document.createElement('div'); block.className='method'; const line=document.createElement('div'); line.className='method-line'; if(method.children.length){ const toggle=document.createElement('button'); toggle.className='toggle'; toggle.type='button'; toggle.textContent=state.expanded.has(method.id)?'−':'+'; toggle.addEventListener('click',()=>{state.expanded.has(method.id)?state.expanded.delete(method.id):state.expanded.add(method.id);renderMethods();}); line.append(toggle); }else line.append(document.createElement('span')); const label=document.createElement('label'); const checkbox=document.createElement('input'); checkbox.type='checkbox'; const childIds=method.children.map((child)=>child.id); checkbox.checked=method.children.length?childIds.every((id)=>state.selected.has(id)):state.selected.has(method.id); checkbox.indeterminate=method.children.length&&childIds.some((id)=>state.selected.has(id))&&!checkbox.checked; checkbox.addEventListener('change',()=>{(method.children.length?childIds:[method.id]).forEach((id)=>checkbox.checked?state.selected.add(id):state.selected.delete(id));renderMethods();}); label.append(checkbox,document.createTextNode(methodName(method))); line.append(label); block.append(line); if(method.children.length&&state.expanded.has(method.id)){ const children=document.createElement('div'); children.className='children'; method.children.forEach((child)=>{const childLabel=document.createElement('label');const childBox=document.createElement('input');childBox.type='checkbox';childBox.checked=state.selected.has(child.id);childBox.addEventListener('change',()=>{childBox.checked?state.selected.add(child.id):state.selected.delete(child.id);renderMethods();});childLabel.append(childBox,document.createTextNode(methodName(child)));children.append(childLabel);});block.append(children);} container.append(block); }); };
+    const renderStats = (stats) => { state.stats=stats; setText('currentStreak',stats.currentStreak); setText('longestStreak',stats.longestStreak); setText('totalCheckins',stats.totalCheckins); setText('lastCheckin',stats.lastCheckinDate?`${text().recent}: ${stats.lastCheckinDate}`:text().noRecord); };
+    const loadHistory = async () => { const {entries}=await api('/history'); const list=el('historyList'); list.replaceChildren(); if(!entries.length){list.textContent=text().noRecord;return;} entries.forEach((entry)=>{const row=document.createElement('div');row.className='history';const time=document.createElement('time');time.textContent=entry.date;const methods=document.createElement('p');methods.textContent=entry.methods;row.append(time,methods);if(entry.reflectionNote){const note=document.createElement('p');note.textContent=`${text().reflectionPrefix}: ${entry.reflectionNote}`;row.append(note);}list.append(row);}); };
+    const load = async () => { try { const profile=await api('/profile'); state.locale=profile.locale; el('language').value=state.locale; applyLocale(); const [methods,today,stats,reminders]=await Promise.all([api('/practice-methods'),api('/checkin/today'),api('/stats'),api('/reminders')]); state.methods=methods.methods;state.today=today;state.selected=new Set(today.selectedMethodIds);state.expanded=new Set(state.methods.filter((method)=>method.children.some((child)=>state.selected.has(child.id))).map((method)=>method.id));el('reflection').value=today.reflectionNote;el('bodyFeeling').value=today.bodyFeelingNote;el('dateLabel').textContent=today.date;el('reminderEnabled').checked=reminders.reminderEnabled;el('reminderHour').value=reminders.reminderHour;el('reminderTimezone').value=reminders.reminderTimezone;applyLocale();renderStats(stats);await loadHistory(); } catch(error){showStatus(el('todayStatus'),error.message,'error');} };
+    for(let hour=0;hour<24;hour+=1){const option=document.createElement('option');option.value=hour;option.textContent=`${String(hour).padStart(2,'0')}:00`;el('reminderHour').append(option);}
+    el('language').addEventListener('change',async()=>{const previous=state.locale;const requested=el('language').value;el('language').disabled=true;state.locale=requested;applyLocale();el('submitStatus').hidden=true;el('reminderStatus').hidden=true;try{const saved=await api('/profile/language',{method:'PATCH',body:JSON.stringify({locale:requested})});state.locale=saved.locale;el('language').value=saved.locale;applyLocale();await loadHistory();}catch(error){state.locale=previous;el('language').value=previous;applyLocale();showStatus(el('todayStatus'),error.message,'error');}finally{el('language').disabled=false;}});
+    el('submit').addEventListener('click',async()=>{if(!state.selected.size)return showStatus(el('submitStatus'),text().selectMethod,'error');el('submit').disabled=true;try{const result=await api('/checkin',{method:'POST',body:JSON.stringify({methodIds:[...state.selected],reflectionNote:el('reflection').value,bodyFeelingNote:el('bodyFeeling').value})});state.today={...state.today,alreadyCheckedIn:true};showStatus(el('submitStatus'),`${text().checkinDone}: ${result.selectedMethods.join(state.locale==='en'?', ':'、')}`,'success');showStatus(el('todayStatus'),text().todayDone);renderStats(result.stats);await loadHistory();}catch(error){showStatus(el('submitStatus'),error.message,'error');}finally{el('submit').disabled=false;}});
+    el('saveReminder').addEventListener('click',async()=>{el('saveReminder').disabled=true;try{await api('/reminders',{method:'PATCH',body:JSON.stringify({reminderEnabled:el('reminderEnabled').checked,reminderHour:Number(el('reminderHour').value),reminderTimezone:el('reminderTimezone').value})});showStatus(el('reminderStatus'),text().reminderSaved,'success');}catch(error){showStatus(el('reminderStatus'),error.message,'error');}finally{el('saveReminder').disabled=false;}});
     load();
   </script>
 </body>

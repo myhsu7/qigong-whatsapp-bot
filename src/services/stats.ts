@@ -1,5 +1,6 @@
 import moment from 'moment-timezone';
 import { db } from '../db';
+import { Locale, t } from '../i18n';
 
 const TIMEZONE = 'Asia/Taipei';
 
@@ -44,12 +45,6 @@ export const getUserStats = async (waId: string): Promise<UserStats> => {
     return calculateStreaks(rows.map((row) => row.checkin_date).filter(Boolean), moment().tz(timezone).format('YYYY-MM-DD'));
 };
 
-export const buildStatsMessage = (stats: UserStats) => stats.totalCheckins === 0
-    ? '你目前還沒有打卡紀錄。輸入「打卡」開始今天的練功。'
-    : [
-        '你的練功統計',
-        `目前連續打卡：${stats.currentStreak} 天`,
-        `最長連續打卡：${stats.longestStreak} 天`,
-        `總打卡天數：${stats.totalCheckins} 天`,
-        `最近打卡日期：${stats.lastCheckinDate}`
-    ].join('\n');
+export const buildStatsMessage = (stats: UserStats, locale: Locale = 'zh_TW') => stats.totalCheckins === 0
+    ? t(locale).statsEmpty
+    : t(locale).stats(stats.currentStreak, stats.longestStreak, stats.totalCheckins, stats.lastCheckinDate!);

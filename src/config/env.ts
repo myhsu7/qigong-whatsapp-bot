@@ -17,8 +17,20 @@ export const env = {
     metaAccessToken: process.env.META_ACCESS_TOKEN || '',
     metaPhoneNumberId: process.env.META_PHONE_NUMBER_ID || '',
     reminderEnabled: process.env.WHATSAPP_REMINDER_ENABLED === 'true',
-    reminderTemplate: process.env.WHATSAPP_REMINDER_TEMPLATE || 'qigong_daily_checkin_reminder',
-    reminderTemplateLanguage: process.env.WHATSAPP_REMINDER_TEMPLATE_LANGUAGE || 'zh_TW',
+    reminderTemplates: {
+        zh_TW: {
+            name: process.env.WHATSAPP_REMINDER_TEMPLATE_ZH_TW || process.env.WHATSAPP_REMINDER_TEMPLATE || 'qigong_daily_checkin_reminder',
+            language: process.env.WHATSAPP_REMINDER_TEMPLATE_LANGUAGE_ZH_TW || process.env.WHATSAPP_REMINDER_TEMPLATE_LANGUAGE || 'zh_TW'
+        },
+        zh_CN: {
+            name: process.env.WHATSAPP_REMINDER_TEMPLATE_ZH_CN || 'qigong_daily_checkin_reminder_zh_cn',
+            language: process.env.WHATSAPP_REMINDER_TEMPLATE_LANGUAGE_ZH_CN || 'zh_CN'
+        },
+        en: {
+            name: process.env.WHATSAPP_REMINDER_TEMPLATE_EN || 'qigong_daily_checkin_reminder_en',
+            language: process.env.WHATSAPP_REMINDER_TEMPLATE_LANGUAGE_EN || 'en'
+        }
+    },
     sessionTtlHours: integer(process.env.SESSION_TTL_HOURS, 168, 1, 720),
     magicLinkTtlMinutes: integer(process.env.MAGIC_LINK_TTL_MINUTES, 15, 1, 60)
 };

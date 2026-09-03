@@ -86,8 +86,12 @@ META_ACCESS_TOKEN=YOUR_META_ACCESS_TOKEN
 META_PHONE_NUMBER_ID=YOUR_PHONE_NUMBER_ID
 
 WHATSAPP_REMINDER_ENABLED=false
-WHATSAPP_REMINDER_TEMPLATE=qigong_daily_checkin_reminder
-WHATSAPP_REMINDER_TEMPLATE_LANGUAGE=zh_TW
+WHATSAPP_REMINDER_TEMPLATE_ZH_TW=qigong_daily_checkin_reminder_zh_tw
+WHATSAPP_REMINDER_TEMPLATE_LANGUAGE_ZH_TW=zh_TW
+WHATSAPP_REMINDER_TEMPLATE_ZH_CN=qigong_daily_checkin_reminder_zh_cn
+WHATSAPP_REMINDER_TEMPLATE_LANGUAGE_ZH_CN=zh_CN
+WHATSAPP_REMINDER_TEMPLATE_EN=qigong_daily_checkin_reminder_en
+WHATSAPP_REMINDER_TEMPLATE_LANGUAGE_EN=en
 SESSION_TTL_HOURS=168
 MAGIC_LINK_TTL_MINUTES=15
 ```
@@ -179,6 +183,16 @@ tailscale funnel status
 選單
 ```
 
+WhatsApp Cloud API 不會在 webhook 提供使用者的 App 介面語言。第一次互動時，Bot 會根據明確的英文、繁體或簡體用字判斷；若內容像「打卡」一樣無法區分繁簡，會先要求選擇：
+
+```text
+1. 繁體中文
+2. 简体中文
+3. English
+```
+
+選擇會保存至使用者資料，後續 Bot、功法名稱、Web App 和提醒皆使用相同語言。輸入 `語言`、`语言` 或 `language` 可隨時切換。
+
 接著測試：
 
 1. 傳送 `打卡`。
@@ -200,16 +214,26 @@ docker exec qigong_db psql -U qigong_user -d qigong_whatsapp_bot -c 'SELECT mess
 
 ## 9. 每日提醒稍後啟用
 
-先在 WhatsApp Manager 建立並送審 utility template，例如名稱：
+先在 WhatsApp Manager 建立並送審三個 utility templates：
 
 ```text
-qigong_daily_checkin_reminder
+qigong_daily_checkin_reminder_zh_tw
+qigong_daily_checkin_reminder_zh_cn
+qigong_daily_checkin_reminder_en
 ```
 
 建議內容：
 
 ```text
 這是您設定的每日氣功打卡提醒。完成練功後，請回覆「打卡」進行記錄；若要停止提醒，請回覆「提醒關閉」。
+```
+
+```text
+这是您设置的每日气功打卡提醒。完成练功后，请回复“打卡”进行记录；若要停止提醒，请回复“提醒关闭”。
+```
+
+```text
+This is your scheduled daily Qigong check-in reminder. After practicing, reply "checkin" to record it. To stop reminders, reply "reminder off".
 ```
 
 核准後確認 template 名稱與語言和 `.env` 一致，再修改：

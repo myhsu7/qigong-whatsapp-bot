@@ -20,7 +20,7 @@ export const requireSession: RequestHandler = async (req, res, next) => {
         const session = parseCookies(req.header('cookie')).qigong_wa_session || '';
         const waId = await resolveSession(session);
         if (!waId) {
-            res.status(401).json({ error: '登入已過期，請回到 WhatsApp 重新輸入「打卡」' });
+            res.status(401).json({ error: '登入已過期，請回到 WhatsApp 重新輸入「打卡」。 / Session expired. Return to WhatsApp and send "checkin" again.' });
             return;
         }
         res.locals.waId = waId;

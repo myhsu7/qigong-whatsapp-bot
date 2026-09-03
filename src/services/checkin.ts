@@ -1,6 +1,8 @@
 import moment from 'moment-timezone';
 import { db } from '../db';
 import { getPracticeMethodRows } from './taxonomy';
+import { Locale } from '../i18n';
+import { UserInputError } from '../errors';
 
 const TIMEZONE = 'Asia/Taipei';
 const MAX_NOTE_LENGTH = 1000;
@@ -49,11 +51,29 @@ export const getTodayCheckin = async (waId: string) => {
     };
 };
 
-export const saveTodayCheckin = async (waId: string, methodIds: number[], reflectionNote: string, bodyFeelingNote: string) => {
+const localizeMethodName = (row: { name_zh: string; name_zh_cn: string; name_en: string | null }, locale: Locale) => {
+    if (locale === 'en') return row.name_en || row.name_zh;
+    if (locale === 'zh_CN') return row.name_zh_cn;
+    return row.name_zh;
+};
+
+const noteLabels = {
+    zh_TW: { methods: '功法', reflection: '心得', body: '身體感受', separator: '、' },
+    zh_CN: { methods: '功法', reflection: '心得', body: '身体感受', separator: '、' },
+    en: { methods: 'Methods', reflection: 'Reflection', body: 'Body', separator: ', ' }
+} as const;
+
+export const saveTodayCheckin = async (
+    waId: string,
+    methodIds: number[],
+    reflectionNote: string,
+    bodyFeelingNote: string,
+    locale: Locale = 'zh_TW'
+) => {
     const uniqueMethodIds = [...new Set(methodIds)];
-    if (!uniqueMethodIds.length) throw new Error('請至少選擇一個功法');
+    if (!uniqueMethodIds.length) throw new UserInputError('select_method');
     if (reflectionNote.length > MAX_NOTE_LENGTH || bodyFeelingNote.length > MAX_NOTE_LENGTH) {
-        throw new Error(`文字欄位不可超過 ${MAX_NOTE_LENGTH} 字`);
+        throw new UserInputError('max_length');
     }
 
     const date = getToday(await getUserTimezone(waId));
@@ -62,23 +82,24 @@ export const saveTodayCheckin = async (waId: string, methodIds: number[], reflec
         await client.query('BEGIN');
         await client.query('SELECT pg_advisory_xact_lock(hashtext($1))', [`${waId}:${date}`]);
         const methods = await client.query(
-            `SELECT id, code, name_zh FROM practice_methods
+            `SELECT id, code, name_zh, name_zh_cn, name_en FROM practice_methods
              WHERE id = ANY($1::int[]) AND is_active = TRUE AND method_type = 'leaf'
              ORDER BY sort_order, id`,
             [uniqueMethodIds]
         );
-        if (methods.rowCount !== uniqueMethodIds.length) throw new Error('包含無效或不可選擇的功法');
+        if (methods.rowCount !== uniqueMethodIds.length) throw new UserInputError('invalid_method');
 
         const existing = await client.query(
             'SELECT id FROM whatsapp_checkin_logs WHERE wa_id = $1 AND checkin_date = $2 FOR UPDATE',
             [waId, date]
         );
         const alreadyCheckedIn = Boolean(existing.rowCount);
-        const names = methods.rows.map((row) => row.name_zh as string);
+        const names = methods.rows.map((row) => localizeMethodName(row, locale));
+        const labels = noteLabels[locale];
         const note = [
-            `功法：${names.join('、')}`,
-            reflectionNote.trim() ? `心得：${reflectionNote.trim()}` : '',
-            bodyFeelingNote.trim() ? `身體感受：${bodyFeelingNote.trim()}` : ''
+            `${labels.methods}: ${names.join(labels.separator)}`,
+            reflectionNote.trim() ? `${labels.reflection}: ${reflectionNote.trim()}` : '',
+            bodyFeelingNote.trim() ? `${labels.body}: ${bodyFeelingNote.trim()}` : ''
         ].filter(Boolean).join('；');
 
         let checkinLogId: string;
@@ -114,16 +135,17 @@ export const saveTodayCheckin = async (waId: string, methodIds: number[], reflec
     }
 };
 
-export const listRecentCheckins = async (waId: string, limit = 30) => {
+export const listRecentCheckins = async (waId: string, locale: Locale = 'zh_TW', limit = 30) => {
+    const methodNameColumn = locale === 'en' ? 'COALESCE(m.name_en, m.name_zh)' : locale === 'zh_CN' ? 'm.name_zh_cn' : 'm.name_zh';
     const { rows } = await db.query(
         `SELECT l.checkin_date::text, l.reflection_note, l.body_feeling_note,
-                COALESCE(string_agg(m.name_zh, '、' ORDER BY m.sort_order), '') AS methods
+                COALESCE(string_agg(${methodNameColumn}, $3 ORDER BY m.sort_order), '') AS methods
          FROM whatsapp_checkin_logs l
          LEFT JOIN whatsapp_checkin_method_selections s ON s.checkin_log_id = l.id
          LEFT JOIN practice_methods m ON m.id = s.practice_method_id
          WHERE l.wa_id = $1
          GROUP BY l.id ORDER BY l.checkin_date DESC LIMIT $2`,
-        [waId, limit]
+        [waId, limit, locale === 'en' ? ', ' : '、']
     );
     return rows.map((row) => ({
         date: row.checkin_date,
