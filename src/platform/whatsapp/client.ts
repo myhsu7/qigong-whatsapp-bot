@@ -18,7 +18,12 @@ const send = async (
     const operationKey = idempotencyKey || `generated:${crypto.randomUUID()}`;
     const claimed = await db.query(
         `INSERT INTO whatsapp_outbound_messages (wa_id, message_type, template_name, idempotency_key)
-         VALUES ($1, $2, $3, $4) ON CONFLICT (idempotency_key) DO NOTHING RETURNING id`,
+         VALUES ($1, $2, $3, $4)
+         ON CONFLICT (idempotency_key) DO UPDATE
+         SET failed_at = NULL, error_details = NULL
+         WHERE whatsapp_outbound_messages.failed_at IS NOT NULL
+           AND whatsapp_outbound_messages.meta_message_id IS NULL
+         RETURNING id`,
         [waId, messageType, templateName || null, operationKey]
     );
     if (!claimed.rowCount) {
