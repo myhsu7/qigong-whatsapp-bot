@@ -104,6 +104,7 @@ export const processWebhookInbox = async () => {
                 const claimed = await client.query(
                     `SELECT id, payload FROM whatsapp_webhook_inbox
                      WHERE processed_at IS NULL
+                       AND attempt_count < 10
                        AND (claimed_at IS NULL OR claimed_at < CURRENT_TIMESTAMP - INTERVAL '5 minutes')
                      ORDER BY received_at FOR UPDATE SKIP LOCKED LIMIT 1`
                 );
