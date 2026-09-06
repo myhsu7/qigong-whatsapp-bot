@@ -6,6 +6,7 @@ import { maxWebhookAttempts, webhookRetryDelaySeconds } from './retryPolicy';
 interface WhatsAppMessage {
     id?: string;
     from?: string;
+    timestamp?: string;
     type?: string;
     text?: { body?: string };
     interactive?: {
@@ -20,6 +21,11 @@ const getMessageText = (message: WhatsAppMessage) => message.text?.body
     || message.interactive?.list_reply?.id
     || message.interactive?.list_reply?.title
     || '';
+
+export const parseWhatsAppTimestamp = (value: unknown) => {
+    const text = String(value || '');
+    return /^\d{10}$/.test(text) ? Number(text) : undefined;
+};
 
 const processStatuses = async (statuses: Array<Record<string, any>>) => {
     for (const status of statuses) {
@@ -38,7 +44,7 @@ const processStatuses = async (statuses: Array<Record<string, any>>) => {
 
 const processInboundMessage = async (inboxId: string, message: WhatsAppMessage, profileName?: string) => {
     if (!message.id || !message.from) return;
-    await upsertWhatsAppUser(message.from, profileName);
+    await upsertWhatsAppUser(message.from, profileName, parseWhatsAppTimestamp(message.timestamp));
     const inserted = await db.query(
         `INSERT INTO whatsapp_inbound_messages (message_id, inbox_id, wa_id, payload, claimed_at, attempt_count)
          VALUES ($1, $2, $3, $4::jsonb, CURRENT_TIMESTAMP, 1)

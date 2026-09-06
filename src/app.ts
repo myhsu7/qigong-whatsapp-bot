@@ -6,6 +6,7 @@ import apiRoutes from './routes/api';
 import { db } from './db';
 import { missingRuntimeConfiguration } from './config/env';
 import { checkMetaCredentials } from './services/metaHealth';
+import { checkLocalLlm } from './services/localLlm';
 
 export const createApp = () => {
     const app = express();
@@ -36,6 +37,10 @@ export const createApp = () => {
     });
     app.get('/whatsapp/health/meta', async (_req, res) => {
         const health = await checkMetaCredentials();
+        res.status(health.ok ? 200 : 503).json(health);
+    });
+    app.get('/whatsapp/health/llm', async (_req, res) => {
+        const health = await checkLocalLlm();
         res.status(health.ok ? 200 : 503).json(health);
     });
     app.get('/whatsapp/health/queue', async (_req, res) => {

@@ -12,6 +12,8 @@ import { UserInputError } from '../errors';
 import { evaluateBadges, getUserBadges } from '../services/badges';
 import { getCalendar } from '../services/calendar';
 import { db } from '../db';
+import { getPracticeAnalysis, parseAnalysisWindow } from '../services/analysis';
+import { generateAnalysisCommentary } from '../services/localLlm';
 
 const router = Router();
 router.use(requireSession, requireSameOriginRequest);
@@ -87,6 +89,37 @@ router.get('/stats', async (_req, res, next) => {
     try {
         const stats = await getUserStats(res.locals.waId);
         res.json({ ...stats, level: calculateLevel(stats.totalCheckins) });
+    } catch (error) {
+        next(error);
+    }
+});
+
+router.get('/analysis', async (req, res, next) => {
+    const period = parseAnalysisWindow(req.query.window);
+    if (!period) {
+        res.status(400).json({ error: 'Analysis window must be 30 or 90 days' });
+        return;
+    }
+    try {
+        const { locale } = await getLanguagePreference(res.locals.waId);
+        res.setHeader('Cache-Control', 'private, no-store');
+        res.json(await getPracticeAnalysis(res.locals.waId, period, locale));
+    } catch (error) {
+        next(error);
+    }
+});
+
+router.post('/analysis/commentary', async (req, res, next) => {
+    const period = parseAnalysisWindow(req.body?.window);
+    if (!period) {
+        res.status(400).json({ error: 'Analysis window must be 30 or 90 days' });
+        return;
+    }
+    try {
+        const { locale } = await getLanguagePreference(res.locals.waId);
+        const analysis = await getPracticeAnalysis(res.locals.waId, period, locale);
+        res.setHeader('Cache-Control', 'private, no-store');
+        res.json(await generateAnalysisCommentary(res.locals.waId, analysis, locale));
     } catch (error) {
         next(error);
     }

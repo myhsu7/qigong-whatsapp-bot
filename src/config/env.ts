@@ -16,6 +16,12 @@ export const env = {
     metaVerifyToken: process.env.META_VERIFY_TOKEN || '',
     metaAccessToken: process.env.META_ACCESS_TOKEN || '',
     metaPhoneNumberId: process.env.META_PHONE_NUMBER_ID || '',
+    localLlmEnabled: process.env.LOCAL_LLM_ENABLED === 'true',
+    localLlmBaseUrl: (process.env.LOCAL_LLM_BASE_URL || '').replace(/\/$/, ''),
+    localLlmModel: process.env.LOCAL_LLM_MODEL || '',
+    localLlmApiKey: process.env.LOCAL_LLM_API_KEY || '',
+    localLlmTimeoutMs: integer(process.env.LOCAL_LLM_TIMEOUT_MS, 10000, 1000, 15000),
+    localLlmMinCheckins: integer(process.env.LOCAL_LLM_MIN_CHECKINS, 5, 1, 100),
     reminderEnabled: process.env.WHATSAPP_REMINDER_ENABLED === 'true',
     reminderTemplates: {
         zh_TW: {
@@ -50,4 +56,9 @@ export const missingRuntimeConfiguration = () => [
     ['META_VERIFY_TOKEN', env.metaVerifyToken],
     ['META_ACCESS_TOKEN', env.metaAccessToken],
     ['META_PHONE_NUMBER_ID', env.metaPhoneNumberId]
+].filter(([, value]) => !value).map(([key]) => key);
+
+export const missingLocalLlmConfiguration = () => [
+    ['LOCAL_LLM_BASE_URL', env.localLlmBaseUrl],
+    ['LOCAL_LLM_MODEL', env.localLlmModel]
 ].filter(([, value]) => !value).map(([key]) => key);

@@ -14,15 +14,16 @@ const getUserTimezone = async (waId: string) => {
 
 export const getToday = (timezone = TIMEZONE) => moment().tz(timezone).format('YYYY-MM-DD');
 
-export const upsertWhatsAppUser = async (waId: string, profileName?: string) => {
+export const upsertWhatsAppUser = async (waId: string, profileName?: string, inboundTimestamp?: number) => {
     await db.query(
         `INSERT INTO whatsapp_users (wa_id, profile_name, last_inbound_at)
-         VALUES ($1, $2, CURRENT_TIMESTAMP)
+         VALUES ($1, $2, CASE WHEN $3::double precision IS NULL THEN NULL ELSE LEAST(to_timestamp($3), CURRENT_TIMESTAMP) END)
          ON CONFLICT (wa_id) DO UPDATE SET
-             profile_name = COALESCE(EXCLUDED.profile_name, whatsapp_users.profile_name),
-             last_inbound_at = CURRENT_TIMESTAMP,
-             updated_at = CURRENT_TIMESTAMP`,
-        [waId, profileName || null]
+              profile_name = COALESCE(EXCLUDED.profile_name, whatsapp_users.profile_name),
+              last_inbound_at = CASE WHEN EXCLUDED.last_inbound_at IS NULL THEN whatsapp_users.last_inbound_at
+                  ELSE GREATEST(COALESCE(whatsapp_users.last_inbound_at, EXCLUDED.last_inbound_at), EXCLUDED.last_inbound_at) END,
+              updated_at = CURRENT_TIMESTAMP`,
+        [waId, profileName || null, inboundTimestamp || null]
     );
 };
 

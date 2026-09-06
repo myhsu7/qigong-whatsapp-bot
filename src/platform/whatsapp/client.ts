@@ -12,6 +12,13 @@ export interface ReplyButton {
     title: string;
 }
 
+export class FreeformWindowClosedError extends Error {
+    constructor() {
+        super('WhatsApp customer-service window is closed');
+        this.name = 'FreeformWindowClosedError';
+    }
+}
+
 const send = async (
     waId: string,
     messageType: string,
@@ -21,6 +28,21 @@ const send = async (
 ) => {
     if (!env.metaAccessToken || !env.metaPhoneNumberId) throw new Error('Meta sending credentials are not configured');
     const operationKey = idempotencyKey || `generated:${crypto.randomUUID()}`;
+    if (idempotencyKey) {
+        const existing = await db.query(
+            'SELECT meta_message_id, failed_at, error_details FROM whatsapp_outbound_messages WHERE idempotency_key = $1',
+            [operationKey]
+        );
+        if (existing.rowCount && !existing.rows[0].failed_at) return existing.rows[0].meta_message_id as string | undefined;
+    }
+    if (messageType !== 'template') {
+        const window = await db.query(
+            `SELECT last_inbound_at > CURRENT_TIMESTAMP - INTERVAL '24 hours' AS open
+             FROM whatsapp_users WHERE wa_id = $1`,
+            [waId]
+        );
+        if (!window.rows[0]?.open) throw new FreeformWindowClosedError();
+    }
     const claimed = await db.query(
         `INSERT INTO whatsapp_outbound_messages (wa_id, message_type, template_name, idempotency_key)
          VALUES ($1, $2, $3, $4)
