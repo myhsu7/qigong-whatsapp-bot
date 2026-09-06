@@ -5,6 +5,7 @@ import webappRoutes from './routes/webapp';
 import apiRoutes from './routes/api';
 import { db } from './db';
 import { missingRuntimeConfiguration } from './config/env';
+import { checkMetaCredentials } from './services/metaHealth';
 
 export const createApp = () => {
     const app = express();
@@ -29,6 +30,23 @@ export const createApp = () => {
         try {
             await db.query('SELECT 1');
             res.json({ ok: true });
+        } catch {
+            res.status(503).json({ ok: false, reason: 'database_unavailable' });
+        }
+    });
+    app.get('/whatsapp/health/meta', async (_req, res) => {
+        const health = await checkMetaCredentials();
+        res.status(health.ok ? 200 : 503).json(health);
+    });
+    app.get('/whatsapp/health/queue', async (_req, res) => {
+        try {
+            const { rows } = await db.query(
+                `SELECT
+                    COUNT(*) FILTER (WHERE processed_at IS NULL AND dead_lettered_at IS NULL) AS pending,
+                    COUNT(*) FILTER (WHERE dead_lettered_at IS NOT NULL) AS dead_lettered
+                 FROM whatsapp_webhook_inbox`
+            );
+            res.json({ ok: true, pending: Number(rows[0].pending), deadLettered: Number(rows[0].dead_lettered) });
         } catch {
             res.status(503).json({ ok: false, reason: 'database_unavailable' });
         }

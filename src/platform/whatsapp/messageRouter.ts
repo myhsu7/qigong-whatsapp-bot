@@ -4,7 +4,7 @@ import { detectLocaleFromText, getLanguagePreference, localeFromSelection, setLa
 import { getReminderSettings, updateReminderSettings } from '../../services/reminders';
 import { issueMagicLink } from '../../services/session';
 import { buildStatsMessage, getUserStats } from '../../services/stats';
-import { sendText } from './client';
+import { ReplyButton, sendInteractiveButtons, sendText } from './client';
 
 export type Command = 'menu' | 'checkin' | 'stats' | 'reminder' | 'reminder-on' | 'reminder-off' | 'language' | 'unknown';
 
@@ -24,6 +24,18 @@ const selectLanguage = async (waId: string, locale: Locale, responseKey: string)
     await setLanguagePreference(waId, locale);
     const messages = t(locale);
     return sendText(waId, `${messages.languageSaved}\n\n${messages.menu}`, responseKey);
+};
+
+const sendMenu = async (waId: string, locale: Locale, responseKey: string) => {
+    const messages = t(locale);
+    const link = await issueMagicLink(waId, 'dashboard');
+    const text = messages.dashboardMenu(env.magicLinkTtlMinutes, link);
+    try {
+        return await sendInteractiveButtons(waId, text, [...messages.menuButtons] as ReplyButton[], responseKey);
+    } catch (error) {
+        console.error('[whatsapp-menu] interactive message failed, using text fallback', error instanceof Error ? error.message : error);
+        return sendText(waId, `${text}\n\n${messages.menu}`, `${responseKey}:fallback`);
+    }
 };
 
 export const routeInboundMessage = async (waId: string, text: string, messageId: string) => {
@@ -66,6 +78,6 @@ export const routeInboundMessage = async (waId: string, text: string, messageId:
             return sendText(waId, messages.languagePrompt, responseKey);
         case 'menu':
         case 'unknown':
-            return sendText(waId, messages.menu, responseKey);
+            return sendMenu(waId, locale, responseKey);
     }
 };

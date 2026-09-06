@@ -6,7 +6,9 @@ WhatsApp Business Platform one-to-one MVP for daily Qigong check-ins.
 
 - Verified Meta Cloud API webhook with raw-body HMAC validation.
 - Durable, deduplicated webhook inbox and delivery status tracking.
+- Exponential webhook retry with explicit dead-letter and queue health reporting.
 - One-to-one commands for check-in links, statistics, and reminder consent.
+- Interactive menus linking to the unified Web Dashboard.
 - Single-use magic-link authentication with server-side sessions.
 - Mobile Web App for check-ins, history, statistics, and reminder settings.
 - Timezone-aware, opt-in template reminders with daily deduplication.
@@ -56,6 +58,8 @@ The default reminder template has no variables or buttons. Users can reply with 
 - `提醒關閉`
 - `選單` or `menu`
 - `語言`, `语言`, or `language`
+
+`選單` / `菜单` / `menu` returns an interactive menu and a single-use Dashboard link. Runtime diagnostics are available at `/whatsapp/health/meta` and `/whatsapp/health/queue`; responses never include access tokens or phone numbers.
 
 ## Production
 

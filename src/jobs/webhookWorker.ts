@@ -1,6 +1,7 @@
 import { db } from '../db';
 import { upsertWhatsAppUser } from '../services/checkin';
 import { routeInboundMessage } from '../platform/whatsapp/messageRouter';
+import { maxWebhookAttempts, webhookRetryDelaySeconds } from './retryPolicy';
 
 interface WhatsAppMessage {
     id?: string;
@@ -98,25 +99,31 @@ export const processWebhookInbox = async () => {
     try {
         while (true) {
             const client = await db.getClient();
-            let item: { id: string; payload: Record<string, any> } | undefined;
+            let item: { id: string; payload: Record<string, any>; attemptCount: number } | undefined;
             try {
                 await client.query('BEGIN');
                 const claimed = await client.query(
                     `SELECT id, payload FROM whatsapp_webhook_inbox
                      WHERE processed_at IS NULL
-                       AND attempt_count < 10
-                       AND (claimed_at IS NULL OR claimed_at < CURRENT_TIMESTAMP - INTERVAL '5 minutes')
-                     ORDER BY received_at FOR UPDATE SKIP LOCKED LIMIT 1`
+                        AND dead_lettered_at IS NULL
+                        AND attempt_count < $1
+                        AND next_attempt_at <= CURRENT_TIMESTAMP
+                        AND (claimed_at IS NULL OR claimed_at < CURRENT_TIMESTAMP - INTERVAL '5 minutes')
+                     ORDER BY next_attempt_at, received_at FOR UPDATE SKIP LOCKED LIMIT 1`,
+                    [maxWebhookAttempts]
                 );
                 if (!claimed.rowCount) {
                     await client.query('COMMIT');
                     break;
                 }
-                item = claimed.rows[0];
-                await client.query(
-                    'UPDATE whatsapp_webhook_inbox SET claimed_at = CURRENT_TIMESTAMP, attempt_count = attempt_count + 1 WHERE id = $1',
-                    [item!.id]
+                const selected = claimed.rows[0];
+                const updated = await client.query(
+                    `UPDATE whatsapp_webhook_inbox
+                     SET claimed_at = CURRENT_TIMESTAMP, attempt_count = attempt_count + 1
+                     WHERE id = $1 RETURNING id, payload, attempt_count`,
+                    [selected.id]
                 );
+                item = { id: updated.rows[0].id, payload: updated.rows[0].payload, attemptCount: updated.rows[0].attempt_count };
                 await client.query('COMMIT');
             } catch (error) {
                 await client.query('ROLLBACK');
@@ -130,9 +137,18 @@ export const processWebhookInbox = async () => {
                 await db.query('UPDATE whatsapp_webhook_inbox SET processed_at = CURRENT_TIMESTAMP, last_error = NULL WHERE id = $1', [item!.id]);
             } catch (error) {
                 const message = error instanceof Error ? error.message : String(error);
-                await db.query('UPDATE whatsapp_webhook_inbox SET claimed_at = NULL, last_error = $2 WHERE id = $1', [item!.id, message.slice(0, 2000)]);
-                console.error(`[webhook-worker] event ${item!.id} failed`, message);
-                break;
+                const deadLettered = item!.attemptCount >= maxWebhookAttempts;
+                const delaySeconds = webhookRetryDelaySeconds(item!.attemptCount);
+                await db.query(
+                    `UPDATE whatsapp_webhook_inbox
+                     SET claimed_at = NULL,
+                         last_error = $2,
+                         next_attempt_at = CASE WHEN $3 THEN next_attempt_at ELSE CURRENT_TIMESTAMP + ($4 * INTERVAL '1 second') END,
+                         dead_lettered_at = CASE WHEN $3 THEN CURRENT_TIMESTAMP ELSE dead_lettered_at END
+                     WHERE id = $1`,
+                    [item!.id, message.slice(0, 2000), deadLettered, delaySeconds]
+                );
+                console.error(`[webhook-worker] event ${item!.id} ${deadLettered ? 'dead-lettered' : `retrying in ${delaySeconds}s`}`, message);
             }
         }
     } finally {

@@ -7,6 +7,11 @@ interface MetaResponse {
     error?: { message?: string; code?: number; error_data?: { details?: string } };
 }
 
+export interface ReplyButton {
+    id: string;
+    title: string;
+}
+
 const send = async (
     waId: string,
     messageType: string,
@@ -67,6 +72,21 @@ const send = async (
 
 export const sendText = (waId: string, text: string, idempotencyKey?: string) =>
     send(waId, 'text', { type: 'text', text: { preview_url: false, body: text } }, undefined, idempotencyKey);
+
+export const sendInteractiveButtons = (waId: string, text: string, buttons: ReplyButton[], idempotencyKey?: string) =>
+    send(waId, 'interactive', {
+        type: 'interactive',
+        interactive: {
+            type: 'button',
+            body: { text },
+            action: {
+                buttons: buttons.map((button) => ({
+                    type: 'reply',
+                    reply: button
+                }))
+            }
+        }
+    }, undefined, idempotencyKey);
 
 export const sendTemplate = (waId: string, name: string, languageCode: string, urlSuffix?: string, idempotencyKey?: string) => {
     const components = urlSuffix ? [{ type: 'button', sub_type: 'url', index: '0', parameters: [{ type: 'text', text: urlSuffix }] }] : undefined;

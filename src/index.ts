@@ -3,6 +3,7 @@ import { env, missingRuntimeConfiguration } from './config/env';
 import { pool } from './db';
 import { processWebhookInbox } from './jobs/webhookWorker';
 import { setupReminderJob } from './jobs/reminderJob';
+import { checkMetaCredentials } from './services/metaHealth';
 
 const missing = missingRuntimeConfiguration();
 if (missing.length && process.env.NODE_ENV === 'production') {
@@ -22,9 +23,19 @@ const retryTimer = setInterval(() => {
 }, 30000);
 retryTimer.unref();
 
+const reportMetaHealth = () => checkMetaCredentials(true)
+    .then((health) => {
+        if (!health.ok) console.error(`[meta-health] check failed: ${health.reason}${health.errorCode ? ` (${health.errorCode})` : ''}`);
+    })
+    .catch(() => console.error('[meta-health] check failed unexpectedly'));
+setImmediate(reportMetaHealth);
+const metaHealthTimer = setInterval(reportMetaHealth, 15 * 60_000);
+metaHealthTimer.unref();
+
 const shutdown = (signal: string) => {
     console.log(`[whatsapp-bot] received ${signal}, shutting down`);
     clearInterval(retryTimer);
+    clearInterval(metaHealthTimer);
     server.close(() => pool.end().finally(() => process.exit(0)));
 };
 

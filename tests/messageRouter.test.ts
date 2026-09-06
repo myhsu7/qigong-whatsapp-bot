@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { normalizeCommand } from '../src/platform/whatsapp/messageRouter';
 import { detectLocaleFromText, localeFromSelection } from '../src/services/language';
+import { supportedLocales, t } from '../src/i18n';
 
 test('normalizes Traditional Chinese and English commands', () => {
     assert.equal(normalizeCommand(' 打卡 '), 'checkin');
@@ -27,4 +28,15 @@ test('detects locale from explicit choices and distinctive text', () => {
 
 test('uses the menu for unsupported input', () => {
     assert.equal(normalizeCommand('今天練什麼'), 'unknown');
+});
+
+test('keeps interactive menu buttons within Meta limits and routes their IDs', () => {
+    for (const locale of supportedLocales) {
+        const buttons = t(locale).menuButtons;
+        assert.ok(buttons.length > 0 && buttons.length <= 3);
+        for (const button of buttons) {
+            assert.ok(button.title.length <= 20);
+            assert.notEqual(normalizeCommand(button.id), 'unknown');
+        }
+    }
 });
