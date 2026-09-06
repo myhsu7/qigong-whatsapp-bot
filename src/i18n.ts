@@ -14,6 +14,8 @@ const messages = {
         checkinLink: (minutes: number, link: string) => `請使用這個一次性連結完成今日打卡（${minutes} 分鐘內有效）：\n${link}`,
         statsEmpty: '你目前還沒有打卡紀錄。輸入「打卡」開始今天的練功。',
         stats: (current: number, longest: number, total: number, last: string) => `你的練功統計\n目前連續打卡：${current} 天\n最長連續打卡：${longest} 天\n總打卡天數：${total} 天\n最近打卡日期：${last}`,
+        level: (title: string) => `目前境界：${title}`,
+        newBadges: (badges: string[]) => `\n新解鎖：${badges.join('、')}`,
         enabled: '開啟', disabled: '關閉',
         reminderStatus: (status: string, hour: number, timezone: string) => `每日提醒目前：${status}\n提醒時間：${hour}:00（${timezone}）\n\n輸入「提醒開啟」或「提醒關閉」。時間與時區可在打卡頁設定。`,
         reminderOn: '每日打卡提醒已開啟。你可以隨時輸入「提醒關閉」取消。',
@@ -31,6 +33,8 @@ const messages = {
         checkinLink: (minutes: number, link: string) => `请使用这个一次性链接完成今日打卡（${minutes} 分钟内有效）：\n${link}`,
         statsEmpty: '你目前还没有打卡记录。输入“打卡”开始今天的练功。',
         stats: (current: number, longest: number, total: number, last: string) => `你的练功统计\n目前连续打卡：${current} 天\n最长连续打卡：${longest} 天\n总打卡天数：${total} 天\n最近打卡日期：${last}`,
+        level: (title: string) => `目前境界：${title}`,
+        newBadges: (badges: string[]) => `\n新解锁：${badges.join('、')}`,
         enabled: '开启', disabled: '关闭',
         reminderStatus: (status: string, hour: number, timezone: string) => `每日提醒目前：${status}\n提醒时间：${hour}:00（${timezone}）\n\n输入“提醒开启”或“提醒关闭”。时间与时区可在打卡页面设置。`,
         reminderOn: '每日打卡提醒已开启。你可以随时输入“提醒关闭”取消。',
@@ -48,6 +52,8 @@ const messages = {
         checkinLink: (minutes: number, link: string) => `Use this one-time link to complete today’s check-in (valid for ${minutes} minutes):\n${link}`,
         statsEmpty: 'You do not have any check-ins yet. Send "checkin" to record today’s practice.',
         stats: (current: number, longest: number, total: number, last: string) => `Your practice statistics\nCurrent streak: ${current} days\nLongest streak: ${longest} days\nTotal check-in days: ${total}\nMost recent check-in: ${last}`,
+        level: (title: string) => `Current level: ${title}`,
+        newBadges: (badges: string[]) => `\nNewly unlocked: ${badges.join(', ')}`,
         enabled: 'On', disabled: 'Off',
         reminderStatus: (status: string, hour: number, timezone: string) => `Daily reminder: ${status}\nReminder time: ${hour}:00 (${timezone})\n\nSend "reminder on" or "reminder off". You can change the time and timezone on the check-in page.`,
         reminderOn: 'Daily check-in reminders are on. Send "reminder off" at any time to stop them.',
@@ -59,3 +65,62 @@ const messages = {
 } as const;
 
 export const t = (locale: Locale) => messages[locale];
+
+const badgeNames: Record<string, Record<Locale, [string, string]>> = {
+    streak_3: { zh_TW: ['入門', '連續打卡 3 天'], zh_CN: ['入门', '连续打卡 3 天'], en: ['First Steps', 'Checked in for 3 consecutive days'] },
+    streak_7: { zh_TW: ['小成', '連續打卡 7 天'], zh_CN: ['小成', '连续打卡 7 天'], en: ['Early Progress', 'Checked in for 7 consecutive days'] },
+    streak_21: { zh_TW: ['結丹', '連續打卡 21 天'], zh_CN: ['结丹', '连续打卡 21 天'], en: ['Inner Foundation', 'Checked in for 21 consecutive days'] },
+    streak_100: { zh_TW: ['百日築基', '連續打卡 100 天'], zh_CN: ['百日筑基', '连续打卡 100 天'], en: ['Hundred-Day Foundation', 'Checked in for 100 consecutive days'] },
+    total_10: { zh_TW: ['初芽', '總計打卡 10 天'], zh_CN: ['初芽', '累计打卡 10 天'], en: ['First Sprout', 'Completed 10 total check-in days'] },
+    total_100: { zh_TW: ['大樹', '總計打卡 100 天'], zh_CN: ['大树', '累计打卡 100 天'], en: ['Flourishing Tree', 'Completed 100 total check-in days'] },
+    time_morning: { zh_TW: ['晨露', '連續 5 天在早上 5:00 - 7:00 打卡'], zh_CN: ['晨露', '连续 5 天在早上 5:00 - 7:00 打卡'], en: ['Morning Dew', 'Checked in between 5:00 and 7:00 AM for 5 consecutive days'] },
+    time_night: { zh_TW: ['夜靜', '連續 5 天在晚上 9:00 - 11:00 打卡'], zh_CN: ['夜静', '连续 5 天在晚上 9:00 - 11:00 打卡'], en: ['Quiet Night', 'Checked in between 9:00 and 11:00 PM for 5 consecutive days'] },
+    seasonal_summer_27: { zh_TW: ['夏練三伏', '於當年三伏期間完成全程打卡'], zh_CN: ['夏练三伏', '在当年三伏期间完成全程打卡'], en: ['Summer Sanfu Practice', 'Completed every check-in during the annual Sanfu period'] },
+    seasonal_winter_27: { zh_TW: ['冬練三九', '冬至後連續 27 天打卡並練習龜壽功'], zh_CN: ['冬练三九', '冬至后连续 27 天打卡并练习龟寿功'], en: ['Winter Sanjiu Practice', 'Practiced Longevity Guishou for 27 consecutive days after winter solstice'] }
+};
+
+const badgeMethodNames: Record<string, Record<Locale, string>> = {
+    dayan: { zh_TW: '大雁功', zh_CN: '大雁功', en: 'EnerQi Dayan' },
+    wuqinxi: { zh_TW: '五禽戲', zh_CN: '五禽戏', en: 'Five Animal Frolics Wuqinxi' },
+    huichun: { zh_TW: '回春功', zh_CN: '回春功', en: 'YoungQi Huichun' },
+    guishou: { zh_TW: '龜壽功', zh_CN: '龟寿功', en: 'Longevity Guishou' },
+    zhengyang: { zh_TW: '正陽功', zh_CN: '正阳功', en: 'VitalQi' },
+    huanghai: { zh_TW: '神奇晃海功', zh_CN: '神奇晃海功', en: 'FlowQi-Neuro' },
+    lotus: { zh_TW: '蓮花養心法', zh_CN: '莲花养心法', en: 'LotusQi' },
+    heqi: { zh_TW: '和氣舒壓法', zh_CN: '和气舒压法', en: 'HarmonyQi' },
+    sanwo: { zh_TW: '三窩功', zh_CN: '三窝功', en: 'Sanwo Gong' },
+    liuyin: { zh_TW: '六音理臟法', zh_CN: '六音理脏法', en: 'DetoxQi Liuyin' },
+    jinggong: { zh_TW: '靜功', zh_CN: '静功', en: 'Quiet Practice' }
+};
+
+export const localizeBadge = <T extends { id: string; name: string; description: string }>(badge: T, locale: Locale): T => {
+    const fixed = badgeNames[badge.id]?.[locale];
+    if (fixed) return { ...badge, name: fixed[0], description: fixed[1] };
+    const methodMatch = badge.id.match(/^method_(.+)_(7|30|100)$/);
+    if (methodMatch) {
+        const method = badgeMethodNames[methodMatch[1]]?.[locale];
+        const days = methodMatch[2];
+        if (method) return {
+            ...badge,
+            name: locale === 'en' ? `${method} | ${days}-Day Milestone` : locale === 'zh_CN' ? `${method}｜累计 ${days} 天` : badge.name,
+            description: locale === 'en' ? `Practiced ${method} on ${days} days` : locale === 'zh_CN' ? `累计练习「${method}」${days} 天` : badge.description
+        };
+    }
+    const comboMatch = badge.id.match(/^combo_(.+)$/);
+    if (comboMatch) {
+        const method = badgeMethodNames[comboMatch[1]]?.[locale];
+        if (method && locale !== 'zh_TW') return {
+            ...badge,
+            name: locale === 'en' ? `${method} Complete Set` : `${method}全套完成`,
+            description: locale === 'en' ? `Completed every active form of ${method} on the same day. Unlockable annually.` : `同日完成「${method}」全部功法，每年可重新解锁`
+        };
+    }
+    return badge;
+};
+
+export const levelTitle = (code: string, locale: Locale) => ({
+    qi: { zh_TW: '練氣', zh_CN: '练气', en: 'Qi Cultivation' },
+    foundation: { zh_TW: '築基', zh_CN: '筑基', en: 'Foundation' },
+    core: { zh_TW: '結丹', zh_CN: '结丹', en: 'Inner Core' },
+    mastery: { zh_TW: '化境', zh_CN: '化境', en: 'Mastery' }
+}[code]?.[locale] || code);

@@ -1,6 +1,6 @@
 import moment from 'moment-timezone';
 import { db } from '../db';
-import { Locale, t } from '../i18n';
+import { Locale, levelTitle, t } from '../i18n';
 
 const TIMEZONE = 'Asia/Taipei';
 
@@ -10,6 +10,36 @@ export interface UserStats {
     longestStreak: number;
     lastCheckinDate: string | null;
 }
+
+export interface LevelProgress {
+    code: 'qi' | 'foundation' | 'core' | 'mastery';
+    level: number;
+    currentThreshold: number;
+    nextThreshold: number | null;
+    remaining: number;
+    progressPercent: number;
+}
+
+export const calculateLevel = (totalCheckins: number): LevelProgress => {
+    const levels = [
+        { code: 'qi' as const, threshold: 0 },
+        { code: 'foundation' as const, threshold: 30 },
+        { code: 'core' as const, threshold: 90 },
+        { code: 'mastery' as const, threshold: 200 }
+    ];
+    const index = totalCheckins >= 200 ? 3 : totalCheckins >= 90 ? 2 : totalCheckins >= 30 ? 1 : 0;
+    const current = levels[index];
+    const next = levels[index + 1];
+    const span = next ? next.threshold - current.threshold : 1;
+    return {
+        code: current.code,
+        level: index + 1,
+        currentThreshold: current.threshold,
+        nextThreshold: next?.threshold ?? null,
+        remaining: next ? Math.max(0, next.threshold - totalCheckins) : 0,
+        progressPercent: next ? Math.min(100, Math.max(0, ((totalCheckins - current.threshold) / span) * 100)) : 100
+    };
+};
 
 export const calculateStreaks = (dateStrings: string[], todayString: string): UserStats => {
     const uniqueDates = [...new Set(dateStrings)].sort();
@@ -47,4 +77,4 @@ export const getUserStats = async (waId: string): Promise<UserStats> => {
 
 export const buildStatsMessage = (stats: UserStats, locale: Locale = 'zh_TW') => stats.totalCheckins === 0
     ? t(locale).statsEmpty
-    : t(locale).stats(stats.currentStreak, stats.longestStreak, stats.totalCheckins, stats.lastCheckinDate!);
+    : `${t(locale).stats(stats.currentStreak, stats.longestStreak, stats.totalCheckins, stats.lastCheckinDate!)}\n${t(locale).level(levelTitle(calculateLevel(stats.totalCheckins).code, locale))}`;

@@ -27,7 +27,8 @@ export const upsertWhatsAppUser = async (waId: string, profileName?: string) => 
 };
 
 export const getTodayCheckin = async (waId: string) => {
-    const date = getToday(await getUserTimezone(waId));
+    const timezone = await getUserTimezone(waId);
+    const date = getToday(timezone);
     const { rows } = await db.query(
         `SELECT id, reflection_note, body_feeling_note
          FROM whatsapp_checkin_logs WHERE wa_id = $1 AND checkin_date = $2`,
@@ -76,7 +77,8 @@ export const saveTodayCheckin = async (
         throw new UserInputError('max_length');
     }
 
-    const date = getToday(await getUserTimezone(waId));
+    const timezone = await getUserTimezone(waId);
+    const date = getToday(timezone);
     const client = await db.getClient();
     try {
         await client.query('BEGIN');
@@ -113,9 +115,9 @@ export const saveTodayCheckin = async (
             await client.query('DELETE FROM whatsapp_checkin_method_selections WHERE checkin_log_id = $1', [checkinLogId]);
         } else {
             const inserted = await client.query(
-                `INSERT INTO whatsapp_checkin_logs (wa_id, checkin_date, reflection_note, body_feeling_note, note)
-                 VALUES ($1, $2, $3, $4, $5) RETURNING id`,
-                [waId, date, reflectionNote.trim() || null, bodyFeelingNote.trim() || null, note]
+                `INSERT INTO whatsapp_checkin_logs (wa_id, checkin_date, reflection_note, body_feeling_note, note, checkin_timezone, checkin_timezone_inferred)
+                 VALUES ($1, $2, $3, $4, $5, $6, FALSE) RETURNING id`,
+                [waId, date, reflectionNote.trim() || null, bodyFeelingNote.trim() || null, note, timezone]
             );
             checkinLogId = inserted.rows[0].id;
         }

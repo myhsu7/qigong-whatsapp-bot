@@ -11,6 +11,8 @@ WhatsApp Business Platform one-to-one MVP for daily Qigong check-ins.
 - Interactive menus linking to the unified Web Dashboard.
 - Single-use magic-link authentication with server-side sessions.
 - Mobile Web App for check-ins, history, statistics, and reminder settings.
+- Four practice levels, 49 persistent achievement badges, and retroactive badge reconciliation.
+- Month-by-month check-in calendar with localized practice details.
 - Timezone-aware, opt-in template reminders with daily deduplication.
 - Traditional Chinese, Simplified Chinese, and English bot and Web App interfaces.
 

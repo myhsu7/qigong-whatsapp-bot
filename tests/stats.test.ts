@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { buildStatsMessage, calculateStreaks } from '../src/services/stats';
+import { buildStatsMessage, calculateLevel, calculateStreaks } from '../src/services/stats';
 
 test('calculates current and longest streaks', () => {
     assert.deepEqual(calculateStreaks(
@@ -32,4 +32,18 @@ test('renders statistics in all supported languages', () => {
     assert.match(buildStatsMessage(stats, 'zh_TW'), /目前連續打卡：2 天/);
     assert.match(buildStatsMessage(stats, 'zh_CN'), /目前连续打卡：2 天/);
     assert.match(buildStatsMessage(stats, 'en'), /Current streak: 2 days/);
+    assert.match(buildStatsMessage(stats, 'zh_TW'), /目前境界：練氣/);
+});
+
+test('calculates level boundaries and progress', () => {
+    assert.deepEqual(calculateLevel(29), {
+        code: 'qi', level: 1, currentThreshold: 0, nextThreshold: 30, remaining: 1, progressPercent: 29 / 30 * 100
+    });
+    assert.equal(calculateLevel(30).code, 'foundation');
+    assert.equal(calculateLevel(89).remaining, 1);
+    assert.equal(calculateLevel(90).code, 'core');
+    assert.equal(calculateLevel(199).remaining, 1);
+    assert.deepEqual(calculateLevel(200), {
+        code: 'mastery', level: 4, currentThreshold: 200, nextThreshold: null, remaining: 0, progressPercent: 100
+    });
 });

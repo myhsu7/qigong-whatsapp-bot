@@ -3,12 +3,15 @@ import { Router } from 'express';
 import { requireSameOriginRequest, requireSession } from '../middleware/session';
 import { getPracticeMethods } from '../services/taxonomy';
 import { getTodayCheckin, listRecentCheckins, saveTodayCheckin } from '../services/checkin';
-import { getUserStats } from '../services/stats';
+import { calculateLevel, getUserStats } from '../services/stats';
 import { getReminderSettings, updateReminderSettings } from '../services/reminders';
 import { sendText } from '../platform/whatsapp/client';
 import { getLanguagePreference, setLanguagePreference } from '../services/language';
-import { normalizeLocale, t } from '../i18n';
+import { levelTitle, normalizeLocale, t } from '../i18n';
 import { UserInputError } from '../errors';
+import { evaluateBadges, getUserBadges } from '../services/badges';
+import { getCalendar } from '../services/calendar';
+import { db } from '../db';
 
 const router = Router();
 router.use(requireSession, requireSameOriginRequest);
@@ -58,9 +61,14 @@ router.post('/checkin', async (req, res) => {
         const reflectionNote = typeof req.body?.reflectionNote === 'string' ? req.body.reflectionNote : '';
         const bodyFeelingNote = typeof req.body?.bodyFeelingNote === 'string' ? req.body.bodyFeelingNote : '';
         const saved = await saveTodayCheckin(res.locals.waId, methodIds, reflectionNote, bodyFeelingNote, locale);
+        const newBadges = await evaluateBadges(res.locals.waId, locale).catch((error) => {
+            console.error('[badges] failed to evaluate after check-in', error);
+            return [];
+        });
         const stats = await getUserStats(res.locals.waId);
-        res.json({ ok: true, ...saved, stats });
-        const summary = messages.summary(saved.alreadyCheckedIn, saved.selectedMethods, stats.currentStreak, stats.totalCheckins);
+        res.json({ ok: true, ...saved, stats: { ...stats, level: calculateLevel(stats.totalCheckins) }, newBadges });
+        const summary = messages.summary(saved.alreadyCheckedIn, saved.selectedMethods, stats.currentStreak, stats.totalCheckins)
+            + (newBadges.length ? messages.newBadges(newBadges.map((badge) => `${badge.emoji} ${badge.name}`)) : '');
         const summaryHash = crypto.createHash('sha256').update(JSON.stringify({ methodIds, reflectionNote, bodyFeelingNote })).digest('hex').slice(0, 20);
         sendText(res.locals.waId, summary, `checkin:${saved.checkinLogId}:${summaryHash}`)
             .catch((error) => console.error('[checkin] failed to send summary', error));
@@ -77,8 +85,48 @@ router.post('/checkin', async (req, res) => {
 
 router.get('/stats', async (_req, res, next) => {
     try {
-        res.json(await getUserStats(res.locals.waId));
+        const stats = await getUserStats(res.locals.waId);
+        res.json({ ...stats, level: calculateLevel(stats.totalCheckins) });
     } catch (error) {
+        next(error);
+    }
+});
+
+router.get('/achievements', async (_req, res, next) => {
+    try {
+        const { locale } = await getLanguagePreference(res.locals.waId);
+        const [stats, badges, catalog] = await Promise.all([
+            getUserStats(res.locals.waId),
+            getUserBadges(res.locals.waId, locale),
+            db.query('SELECT COUNT(*) AS count FROM whatsapp_badges')
+        ]);
+        const level = calculateLevel(stats.totalCheckins);
+        res.json({
+            stats,
+            level: {
+                ...level,
+                title: levelTitle(level.code, locale),
+                nextTitle: level.nextThreshold === null ? null : levelTitle(calculateLevel(level.nextThreshold).code, locale)
+            },
+            badges,
+            earnedCount: new Set(badges.map((badge) => badge.id)).size,
+            totalAvailable: Number(catalog.rows[0].count)
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
+router.get('/calendar', async (req, res, next) => {
+    try {
+        const { locale } = await getLanguagePreference(res.locals.waId);
+        const month = typeof req.query.month === 'string' ? req.query.month : undefined;
+        res.json(await getCalendar(res.locals.waId, month, locale));
+    } catch (error) {
+        if (error instanceof UserInputError) {
+            res.status(400).json({ error: 'Invalid month; expected YYYY-MM' });
+            return;
+        }
         next(error);
     }
 });

@@ -4,6 +4,7 @@ import { pool } from './db';
 import { processWebhookInbox } from './jobs/webhookWorker';
 import { setupReminderJob } from './jobs/reminderJob';
 import { checkMetaCredentials } from './services/metaHealth';
+import { setupBadgeJob } from './jobs/badgeJob';
 
 const missing = missingRuntimeConfiguration();
 if (missing.length && process.env.NODE_ENV === 'production') {
@@ -15,6 +16,7 @@ const app = createApp();
 const server = app.listen(env.port, () => {
     console.log(`[whatsapp-bot] listening on port ${env.port}`);
     setupReminderJob();
+    setupBadgeJob();
     processWebhookInbox().catch((error) => console.error('[webhook-worker] startup failed', error));
 });
 
