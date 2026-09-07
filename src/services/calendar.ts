@@ -26,7 +26,7 @@ export const getCalendar = async (waId: string, requestedMonth: string | undefin
     const range = getMonthRange(month);
     const nameColumn = locale === 'en' ? 'COALESCE(m.name_en, m.name_zh)' : locale === 'zh_CN' ? 'm.name_zh_cn' : 'm.name_zh';
     const { rows } = await db.query(
-        `SELECT l.id, l.checkin_date::text, l.reflection_note, l.body_feeling_note,
+        `SELECT l.id, l.checkin_date::text, l.practice_note,
                 COALESCE(ARRAY_AGG(${nameColumn} ORDER BY m.sort_order) FILTER (WHERE m.id IS NOT NULL), '{}') AS methods
          FROM whatsapp_checkin_logs l
          LEFT JOIN whatsapp_checkin_method_selections s ON s.checkin_log_id = l.id
@@ -39,8 +39,9 @@ export const getCalendar = async (waId: string, requestedMonth: string | undefin
         id: Number(row.id),
         date: row.checkin_date,
         methods: row.methods || [],
-        reflectionNote: row.reflection_note || '',
-        bodyFeelingNote: row.body_feeling_note || ''
+        practiceNote: row.practice_note || '',
+        reflectionNote: row.practice_note || '',
+        bodyFeelingNote: ''
     }));
     return { ...range, checkedInDates: entries.map((entry) => entry.date), entries };
 };

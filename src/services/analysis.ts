@@ -18,8 +18,7 @@ export interface AnalysisSelection {
 export interface AnalysisLog {
     id: number;
     date: string;
-    hasReflection: boolean;
-    hasBodyFeeling: boolean;
+    hasPracticeNote: boolean;
     selections: AnalysisSelection[];
 }
 
@@ -103,7 +102,7 @@ export const buildPracticeAnalysis = (
         attendanceRate: dates.length / periodDays,
         currentStreak: streaks.currentStreak,
         longestStreak: streaks.longestStreak,
-        journalDays: uniqueLogs.filter((log) => log.hasReflection || log.hasBodyFeeling).length,
+        journalDays: uniqueLogs.filter((log) => log.hasPracticeNote).length,
         dataSufficient: dates.length >= 5,
         trend: { firstHalfDays, secondHalfDays, delta, direction: delta >= 2 ? 'up' : delta <= -2 ? 'down' : 'stable' },
         groupMethods: buildItems(groupCounts, dates.length),
@@ -123,7 +122,7 @@ export const getPracticeAnalysis = async (waId: string, periodDays: AnalysisWind
     const end = moment().tz(timezone).startOf('day');
     const start = end.clone().subtract(periodDays - 1, 'days');
     const { rows } = await db.query(
-        `SELECT l.id, l.checkin_date::text, l.reflection_note, l.body_feeling_note,
+        `SELECT l.id, l.checkin_date::text, l.practice_note,
                 leaf.id AS leaf_id, leaf.code AS leaf_code, leaf.name_zh AS leaf_name_zh,
                 leaf.name_zh_cn AS leaf_name_zh_cn, leaf.name_en AS leaf_name_en,
                 COALESCE(parent.id, leaf.id) AS group_id,
@@ -147,8 +146,7 @@ export const getPracticeAnalysis = async (waId: string, periodDays: AnalysisWind
             log = {
                 id,
                 date: row.checkin_date,
-                hasReflection: Boolean(row.reflection_note?.trim()),
-                hasBodyFeeling: Boolean(row.body_feeling_note?.trim()),
+                hasPracticeNote: Boolean(row.practice_note?.trim()),
                 selections: []
             };
         }

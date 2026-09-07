@@ -1,6 +1,13 @@
 import fs from 'fs/promises';
 import path from 'path';
-import { pool } from './db';
+import { Pool } from 'pg';
+import { env } from './config/env';
+
+const pool = new Pool({
+    connectionString: env.databaseUrl || undefined,
+    connectionTimeoutMillis: 5000,
+    idleTimeoutMillis: 30000
+});
 
 const run = async () => {
     const migrationsDir = path.join(process.cwd(), 'migrations');

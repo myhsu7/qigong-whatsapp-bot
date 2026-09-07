@@ -2,7 +2,7 @@ import crypto from 'crypto';
 import { Router } from 'express';
 import { requireSameOriginRequest, requireSession } from '../middleware/session';
 import { getPracticeMethods } from '../services/taxonomy';
-import { getTodayCheckin, listRecentCheckins, saveTodayCheckin } from '../services/checkin';
+import { getTodayCheckin, listRecentCheckins, mergeLegacyPracticeNotes, saveTodayCheckin, splitLegacyPracticeNote } from '../services/checkin';
 import { calculateLevel, getUserStats } from '../services/stats';
 import { getReminderSettings, updateReminderSettings } from '../services/reminders';
 import { sendText } from '../platform/whatsapp/client';
@@ -60,9 +60,13 @@ router.post('/checkin', async (req, res) => {
         const methodIds = Array.isArray(req.body?.methodIds)
             ? [...new Set<number>(req.body.methodIds.map(Number).filter((id: number) => Number.isSafeInteger(id) && id > 0))]
             : [];
-        const reflectionNote = typeof req.body?.reflectionNote === 'string' ? req.body.reflectionNote : '';
-        const bodyFeelingNote = typeof req.body?.bodyFeelingNote === 'string' ? req.body.bodyFeelingNote : '';
-        const saved = await saveTodayCheckin(res.locals.waId, methodIds, reflectionNote, bodyFeelingNote, locale);
+        const hasPracticeNote = typeof req.body?.practiceNote === 'string';
+        const legacyReflectionNote = typeof req.body?.reflectionNote === 'string' ? req.body.reflectionNote : '';
+        const legacyBodyFeelingNote = typeof req.body?.bodyFeelingNote === 'string' ? req.body.bodyFeelingNote : '';
+        const practiceNote = hasPracticeNote
+            ? req.body.practiceNote
+            : mergeLegacyPracticeNotes(legacyReflectionNote, legacyBodyFeelingNote);
+        const saved = await saveTodayCheckin(res.locals.waId, methodIds, practiceNote, locale);
         const newBadges = await evaluateBadges(res.locals.waId, locale).catch((error) => {
             console.error('[badges] failed to evaluate after check-in', error);
             return [];
@@ -71,7 +75,14 @@ router.post('/checkin', async (req, res) => {
         res.json({ ok: true, ...saved, stats: { ...stats, level: calculateLevel(stats.totalCheckins) }, newBadges });
         const summary = messages.summary(saved.alreadyCheckedIn, saved.selectedMethods, stats.currentStreak, stats.totalCheckins)
             + (newBadges.length ? messages.newBadges(newBadges.map((badge) => `${badge.emoji} ${badge.name}`)) : '');
-        const summaryHash = crypto.createHash('sha256').update(JSON.stringify({ methodIds, reflectionNote, bodyFeelingNote })).digest('hex').slice(0, 20);
+        const [hashReflectionNote, hashBodyFeelingNote] = hasPracticeNote
+            ? splitLegacyPracticeNote(practiceNote)
+            : [legacyReflectionNote, legacyBodyFeelingNote];
+        const summaryHash = crypto.createHash('sha256').update(JSON.stringify({
+            methodIds,
+            reflectionNote: hashReflectionNote,
+            bodyFeelingNote: hashBodyFeelingNote
+        })).digest('hex').slice(0, 20);
         sendText(res.locals.waId, summary, `checkin:${saved.checkinLogId}:${summaryHash}`)
             .catch((error) => console.error('[checkin] failed to send summary', error));
     } catch (error) {

@@ -6,8 +6,7 @@ const logs: AnalysisLog[] = [
     {
         id: 1,
         date: '2026-09-01',
-        hasReflection: true,
-        hasBodyFeeling: false,
+        hasPracticeNote: true,
         selections: [
             { leafId: 11, leafCode: 'dayan_chu', leafName: '大雁初', groupId: 1, groupCode: 'dayan', groupName: '大雁功' },
             { leafId: 12, leafCode: 'dayan_gao', leafName: '大雁高', groupId: 1, groupCode: 'dayan', groupName: '大雁功' }
@@ -16,8 +15,7 @@ const logs: AnalysisLog[] = [
     {
         id: 2,
         date: '2026-09-02',
-        hasReflection: false,
-        hasBodyFeeling: true,
+        hasPracticeNote: true,
         selections: [{ leafId: 20, leafCode: 'lotus', leafName: '蓮花養心法', groupId: 20, groupCode: 'lotus', groupName: '蓮花養心法' }]
     }
 ];

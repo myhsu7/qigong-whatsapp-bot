@@ -11,6 +11,11 @@ test('ships achievement and calendar UI with valid inline JavaScript', () => {
     assert.match(html, /id="analysisBars"/);
     assert.match(html, /id="generateCommentary"/);
     assert.match(html, /id="returnToWhatsApp"/);
+    assert.match(html, /id="practiceNote"/);
+    assert.doesNotMatch(html, /id="reflection"|id="bodyFeeling"/);
+    assert.match(html, /splitLegacyNote\(practiceNote\)/);
+    assert.match(html, /practiceNote,reflectionNote,bodyFeelingNote/);
+    assert.match(html, /mergeLegacyNotes\(today\.reflectionNote,today\.bodyFeelingNote\)/);
     assert.doesNotMatch(html, /Promise\.all\(\[[^\]]*analysis\/commentary/);
     assert.match(html, /analysisRequestId/);
     assert.match(html, /commentaryRequestId/);

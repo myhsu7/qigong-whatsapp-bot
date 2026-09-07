@@ -11,6 +11,7 @@ WhatsApp Business Platform one-to-one MVP for daily Qigong check-ins.
 - Interactive menus linking to the unified Web Dashboard.
 - Single-use magic-link authentication with server-side sessions.
 - Mobile Web App for check-ins, history, statistics, and reminder settings.
+- One optional combined practice reflection and body-sensation note per check-in.
 - Four practice levels, 49 persistent achievement badges, and retroactive badge reconciliation.
 - Month-by-month check-in calendar with localized practice details.
 - Timezone-aware, opt-in template reminders with daily deduplication.
@@ -69,12 +70,14 @@ After a successful Web App check-in, the page attempts to close the in-app brows
 
 ```bash
 npm ci
-npm run build
 npm run migrate
+npm run build
 pm2 startOrReload ecosystem.config.js
 ```
 
 Add the route in `docs/Caddyfile.example` to the existing Caddy configuration. Keep `.env`, access tokens, phone numbers, journal text, raw webhook bodies, and magic-link tokens out of logs and source control.
+
+Run migrations before restarting updated application code. Migration 006 adds `practice_note` and keeps legacy writes synchronized during rollout; migration 007 backfills existing reflection and body-sensation notes without dropping the old columns.
 
 Run a Meta test-number beta before registering the production number.
 

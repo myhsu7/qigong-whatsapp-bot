@@ -198,7 +198,7 @@ WhatsApp Cloud API 不會在 webhook 提供使用者的 App 介面語言。第�
 
 1. 傳送 `打卡`。
 2. Bot 應回覆 15 分鐘有效的一次性 HTTPS 連結。
-3. 開啟連結，選擇至少一個功法並送出。
+3. 開啟連結，選擇至少一個功法，可選填「練功心得與身體感受」後送出。
 4. Web App 應顯示打卡成功。
 5. WhatsApp 應收到打卡摘要。
 6. 再傳送 `統計`，累計天數應為 1。
@@ -209,7 +209,7 @@ WhatsApp Cloud API 不會在 webhook 提供使用者的 App 介面語言。第�
 
 ```bash
 docker exec qigong_db psql -U qigong_user -d qigong_whatsapp_bot -c 'SELECT wa_id, profile_name, last_inbound_at FROM whatsapp_users ORDER BY last_inbound_at DESC LIMIT 5;'
-docker exec qigong_db psql -U qigong_user -d qigong_whatsapp_bot -c 'SELECT wa_id, checkin_date, note FROM whatsapp_checkin_logs ORDER BY created_at DESC LIMIT 5;'
+docker exec qigong_db psql -U qigong_user -d qigong_whatsapp_bot -c 'SELECT wa_id, checkin_date, practice_note, note FROM whatsapp_checkin_logs ORDER BY created_at DESC LIMIT 5;'
 docker exec qigong_db psql -U qigong_user -d qigong_whatsapp_bot -c 'SELECT message_id, processed_at, last_error FROM whatsapp_inbound_messages ORDER BY received_at DESC LIMIT 10;'
 ```
 

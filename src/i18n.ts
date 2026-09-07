@@ -21,7 +21,7 @@ const messages = {
         reminderOn: '每日打卡提醒已開啟。你可以隨時輸入「提醒關閉」取消。',
         reminderOff: '每日打卡提醒已關閉。',
         summary: (updated: boolean, methods: string[], current: number, total: number) => `${updated ? '今日打卡已更新。' : '今日打卡完成。'}\n功法：${methods.join('、')}\n目前連續：${current} 天｜累計：${total} 天`,
-        selectMethod: '請至少選擇一個功法', maxLength: '文字欄位不可超過 1000 字', invalidMethod: '包含無效或不可選擇的功法',
+        selectMethod: '請至少選擇一個功法', maxLength: '心得與感受不可超過 1000 字', invalidMethod: '包含無效或不可選擇的功法',
         saveFailed: '打卡儲存失敗', reminderHourInvalid: '提醒時間必須介於 0 到 23 點', timezoneInvalid: '無效的時區', reminderFailed: '提醒設定失敗'
     },
     zh_CN: {
@@ -40,7 +40,7 @@ const messages = {
         reminderOn: '每日打卡提醒已开启。你可以随时输入“提醒关闭”取消。',
         reminderOff: '每日打卡提醒已关闭。',
         summary: (updated: boolean, methods: string[], current: number, total: number) => `${updated ? '今日打卡已更新。' : '今日打卡完成。'}\n功法：${methods.join('、')}\n目前连续：${current} 天｜累计：${total} 天`,
-        selectMethod: '请至少选择一个功法', maxLength: '文字字段不可超过 1000 字', invalidMethod: '包含无效或不可选择的功法',
+        selectMethod: '请至少选择一个功法', maxLength: '心得与感受不可超过 1000 字', invalidMethod: '包含无效或不可选择的功法',
         saveFailed: '打卡保存失败', reminderHourInvalid: '提醒时间必须介于 0 到 23 点', timezoneInvalid: '无效的时区', reminderFailed: '提醒设置失败'
     },
     en: {
@@ -59,7 +59,7 @@ const messages = {
         reminderOn: 'Daily check-in reminders are on. Send "reminder off" at any time to stop them.',
         reminderOff: 'Daily check-in reminders are off.',
         summary: (updated: boolean, methods: string[], current: number, total: number) => `${updated ? 'Today’s check-in was updated.' : 'Today’s check-in is complete.'}\nMethods: ${methods.join(', ')}\nCurrent streak: ${current} days | Total: ${total} days`,
-        selectMethod: 'Select at least one practice method', maxLength: 'Text fields cannot exceed 1,000 characters', invalidMethod: 'One or more selected methods are invalid',
+        selectMethod: 'Select at least one practice method', maxLength: 'Reflection and sensations cannot exceed 1,000 characters', invalidMethod: 'One or more selected methods are invalid',
         saveFailed: 'Failed to save check-in', reminderHourInvalid: 'Reminder hour must be between 0 and 23', timezoneInvalid: 'Invalid timezone', reminderFailed: 'Failed to save reminder settings'
     }
 } as const;
