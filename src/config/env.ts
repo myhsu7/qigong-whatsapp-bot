@@ -16,6 +16,7 @@ export const env = {
     metaVerifyToken: process.env.META_VERIFY_TOKEN || '',
     metaAccessToken: process.env.META_ACCESS_TOKEN || '',
     metaPhoneNumberId: process.env.META_PHONE_NUMBER_ID || '',
+    whatsappBusinessNumber: (process.env.WHATSAPP_BUSINESS_NUMBER || '').trim(),
     localLlmEnabled: process.env.LOCAL_LLM_ENABLED === 'true',
     localLlmBaseUrl: (process.env.LOCAL_LLM_BASE_URL || '').replace(/\/$/, ''),
     localLlmModel: process.env.LOCAL_LLM_MODEL || '',
@@ -57,6 +58,9 @@ export const missingRuntimeConfiguration = () => [
     ['META_ACCESS_TOKEN', env.metaAccessToken],
     ['META_PHONE_NUMBER_ID', env.metaPhoneNumberId]
 ].filter(([, value]) => !value).map(([key]) => key);
+
+export const buildWhatsAppChatUrl = (number = env.whatsappBusinessNumber) =>
+    /^[1-9]\d{7,14}$/.test(number) ? `https://wa.me/${number}` : null;
 
 export const missingLocalLlmConfiguration = () => [
     ['LOCAL_LLM_BASE_URL', env.localLlmBaseUrl],

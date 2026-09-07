@@ -45,7 +45,7 @@ Use `META_VERIFY_TOKEN` while registering the webhook and subscribe the WABA to 
 1. Create a Meta app with WhatsApp Business Platform enabled.
 2. Add or register a business phone number.
 3. Create a system user token with the required WhatsApp permissions.
-4. Set `META_APP_SECRET`, `META_ACCESS_TOKEN`, and `META_PHONE_NUMBER_ID`.
+4. Set `META_APP_SECRET`, `META_ACCESS_TOKEN`, `META_PHONE_NUMBER_ID`, and `WHATSAPP_BUSINESS_NUMBER` (E.164 digits only, without `+`).
 5. Submit the three configured reminder templates for approval before enabling reminders.
 6. Ensure each approved template name and language matches the corresponding `WHATSAPP_REMINDER_TEMPLATE_*` settings.
 
@@ -62,6 +62,8 @@ The default reminder template has no variables or buttons. Users can reply with 
 - `語言`, `语言`, or `language`
 
 `選單` / `菜单` / `menu` returns an interactive menu and a single-use Dashboard link. Runtime diagnostics are available at `/whatsapp/health/meta` and `/whatsapp/health/queue`; responses never include access tokens or phone numbers.
+
+After a successful Web App check-in, the page attempts to close the in-app browser and then falls back to `/whatsapp/webapp/return`, which redirects to the configured WhatsApp business chat.
 
 ## Production
 
